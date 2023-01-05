@@ -648,9 +648,9 @@ class RideStartStopSerializerView(APIView):
                                             'message': 'ride cannot be started vehicle is running',
                                         }, status=status.HTTP_200_OK)
                             
-                    # unlock_data = unlock_scooter(user.bolt_token, scooter.vehicle_unique_identifier)
+                    unlock_data = unlock_scooter(user.bolt_token, scooter.vehicle_unique_identifier)
                     scooter_coordinate = get_vehicle_location(scooter.vehicle_unique_identifier, user.id)
-                    if True:#unlock_data.status_code == 200:
+                    if unlock_data.status_code == 200:
                         scooter.is_reserved = False
                         scooter.is_unlocked = True
                         scooter.save()
@@ -667,7 +667,7 @@ class RideStartStopSerializerView(APIView):
                     else:
                         return Response({
                                         'message': 'ride cannot be started vehicle is running',
-                                    }, status=status.HTTP_200_OK)
+                                    }, status=status.HTTP_400_BAD_REQUEST)
 
                 if ride_obj.is_ride_end == True:
                     return Response({'message': 'ride already ended'}, status=status.HTTP_400_BAD_REQUEST)
@@ -675,8 +675,8 @@ class RideStartStopSerializerView(APIView):
                 if action == "pause":
                     if ride_obj.is_paused == False:
                         ride_pause_obj = RideTimeHistory.objects.create(ride_table_id=ride_obj, pause_time=current_time)
-                        # lock_data = lock_scooter(user.bolt_token, scooter.vehicle_unique_identifier)
-                        if True:#lock_data.status_code == 200:
+                        lock_data = lock_scooter(user.bolt_token, scooter.vehicle_unique_identifier)
+                        if lock_data.status_code == 200:
                             start = datetime.datetime.strptime(str(ride_obj.start_time), "%H:%M:%S")
                             pause = datetime.datetime.strptime(str(current_time), "%H:%M:%S")
                             delta = pause-start
@@ -697,13 +697,13 @@ class RideStartStopSerializerView(APIView):
                     else:
                         return Response({
                                         'message': 'ride cannot be paused, it is already paused',
-                                    }, status=status.HTTP_200_OK)
+                                    }, status=status.HTTP_400_BAD_REQUEST)
                 
                 if action == "resume":
                     ride_pause_obj = RideTimeHistory.objects.filter(ride_table_id=ride_obj).last()
                     if ride_obj.is_paused == True:
-                        # unlock_data = unlock_scooter(user.bolt_token, scooter.vehicle_unique_identifier)
-                        if True:#unlock_data.status_code == 200:
+                        unlock_data = unlock_scooter(user.bolt_token, scooter.vehicle_unique_identifier)
+                        if unlock_data.status_code == 200:
                             ride_pause_obj.resume_time = str(current_time)
                             ride_obj.is_paused = False
                             pause = datetime.datetime.strptime(str(ride_pause_obj.pause_time), "%H:%M:%S")
@@ -727,13 +727,13 @@ class RideStartStopSerializerView(APIView):
                     else:
                         return Response({
                                         'message': 'ride cannot be resumed, it is already running',
-                                    }, status=status.HTTP_200_OK)
+                                    }, status=status.HTTP_400_BAD_REQUEST)
                 
                 if action == 'end':
                     ride_pause_queryset = RideTimeHistory.objects.filter(ride_table_id=ride_obj)
                     if ride_obj.is_ride_end == False:
-                        # lock_data = lock_scooter(user.bolt_token, scooter.vehicle_unique_identifier)
-                        if True:#lock_data.status_code == 200:
+                        lock_data = lock_scooter(user.bolt_token, scooter.vehicle_unique_identifier)
+                        if lock_data.status_code == 200:
                             scooter.is_unlocked = False
                             scooter.save()
                             delta = 0
@@ -854,7 +854,6 @@ class RideStartStopSerializerView(APIView):
                         return Response({'message': 'ride already ended'}, status=status.HTTP_400_BAD_REQUEST)
                 
             except Exception as e:
-                print('e: ', e.__traceback__())
                 return Response({'message': str(e)}, status=status.HTTP_404_NOT_FOUND)
         return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
 

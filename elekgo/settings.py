@@ -34,7 +34,7 @@ SECRET_KEY =os.getenv('SECRET_KEY')
 # DEBUG = True
 DEBUG = False
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['3.108.233.88', "127.0.0.1"]
 
 
 # Application definition
