@@ -1,0 +1,16 @@
+env
+.env
+*.pyc
+/static/
+/staticfiles/
+*.sqlite3
+todo
+db.json
+*.dot
+live_setup
+*.lock
+*.toml
+*.yaml
+todo
+build.sh
+database architecture
