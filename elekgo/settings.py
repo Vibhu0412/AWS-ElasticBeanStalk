@@ -213,7 +213,7 @@ SIMPLE_JWT = {
     'BLACKLIST_AFTER_ROTATION': False,
     'UPDATE_LAST_LOGIN': False,
 }
-# import os
+
 STATICFILES_DIRS = (
     os.path.join(BASE_DIR, 'staticfiles'),
 )
