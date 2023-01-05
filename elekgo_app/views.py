@@ -32,8 +32,8 @@ from elekgo_app.utils import send_notification, update_or_create_vehicle_data, r
 import environ
 from rest_framework.decorators import action
 from elekgo_app.pagination import CustomPagination
-# from elekgo_app.tasks import countdown_timer, geocoder_reverse
-# from elekgo.celery import app
+from elekgo_app.tasks import countdown_timer, geocoder_reverse
+from elekgo.celery import app
 import math
 from dotenv import load_dotenv
 load_dotenv()
@@ -1518,8 +1518,8 @@ class GetAvailableVehicles(ViewSet):
             vehicle_obj.reserverd_user_id = user_obj
             vehicle_obj.is_reserved = True
             vehicle_obj.save()
-            # timer = countdown_timer.delay(vid)
-            # Vehicle.objects.filter(vehicle_unique_identifier=vid).update(celery_task_id=timer.id)
+            timer = countdown_timer.delay(vid)
+            Vehicle.objects.filter(vehicle_unique_identifier=vid).update(celery_task_id=timer.id)
             serializer = ReserveSerializer(vehicle_obj)
             response_data = {"data": serializer.data, "message": "Vehicle reserved for 30 minutes"}
             return Response(response_data, status=status.HTTP_200_OK)
@@ -1539,7 +1539,7 @@ class GetAvailableVehicles(ViewSet):
                 vehicle_obj.reserverd_user_id = None
                 vehicle_obj.is_reserved = False
                 vehicle_obj.save()
-                # app.control.revoke(vehicle_obj.celery_task_id, terminate=True, signal='SIGKILL')
+                app.control.revoke(vehicle_obj.celery_task_id, terminate=True, signal='SIGKILL')
                 serializer = ReserveSerializer(vehicle_obj)
                 response_data = {"data": serializer.data, "message": "Vehicle reservation cancelled"}
             else:
