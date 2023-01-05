@@ -638,6 +638,8 @@ class RideStartStopSerializerView(APIView):
             try:
                 user = User.objects.get(id=user_id)
                 scooter = Vehicle.objects.filter(vehicle_unique_identifier=scooter_id).first()
+                if (scooter.reserverd_user_id is not None) or (scooter.reserverd_user_id != user.id):
+                    return Response({'message': 'ride is reserved'}, status=status.HTTP_400_BAD_REQUEST)
                 
                 ride_obj = RideTable.objects.filter(vehicle_id=scooter).last()
                 
@@ -799,8 +801,8 @@ class RideStartStopSerializerView(APIView):
                             
                             per_min_running_charge = float(ride_obj.vehicle_id.per_min_charge)
                             per_min_pause_charge = float(ride_obj.vehicle_id.per_pause_charge)
-                            total_pause_time = int(ride_obj.total_pause_time) / 60
-                            total_running_time = int(ride_obj.total_running_time) / 60
+                            total_pause_time = float(ride_obj.total_pause_time) / 60
+                            total_running_time = float(ride_obj.total_running_time) / 60
                             total_time = total_pause_time + total_running_time
                             ratio = total_pause_time / total_time
                             
@@ -822,9 +824,9 @@ class RideStartStopSerializerView(APIView):
                             
                             trip_statistics = {
                                 "per_minute_charges_on_running": per_min_running_charge,
-                                "total_running_mins": f'{time.strftime("%M:%S", time.gmtime(int(total_running_time)*60))} Min',
+                                "total_running_mins": f'{time.strftime("%M:%S", time.gmtime(float(total_running_time)*60))} Min',
                                 "per_minute_charges_on_pause": per_min_pause_charge,
-                                "total_pause_mins": f'{time.strftime("%M:%S", time.gmtime(int(total_pause_time)*60))} Min' if total_pause_time else '00:00 Min',
+                                "total_pause_mins": f'{time.strftime("%M:%S", time.gmtime(float(total_pause_time)*60))} Min' if total_pause_time else '00:00 Min',
                                 "total_min_cost": round(total_cost, 2),
                                 "total_pause_cost": round(pause_cost, 2),
                                 "total_km": ride_distance,
@@ -1511,6 +1513,8 @@ class GetAvailableVehicles(ViewSet):
             vehicle_obj = Vehicle.objects.filter(vehicle_unique_identifier=vid).first()
             user_obj = User.objects.filter(pk=request.user.id).first()
             serializer = ReserveSerializer(vehicle_obj)
+            if vehicle_obj.booked_user_id is not None:
+                    return Response({'message': 'ride is booked'}, status=status.HTTP_400_BAD_REQUEST)
             if vehicle_obj.is_reserved == True:
                 response_data = {"data": serializer.data, "message": "Vehicle is already reserved"}
                 return Response(response_data, status=status.HTTP_200_OK)
