@@ -648,7 +648,7 @@ class RideStartStopSerializerView(APIView):
                         if ride_obj.is_ride_end == False:
                             return Response({
                                             'message': 'ride cannot be started vehicle is running',
-                                        }, status=status.HTTP_200_OK)
+                                        }, status=status.HTTP_400_BAD_REQUEST)
                             
                     unlock_data = unlock_scooter(user.bolt_token, scooter.vehicle_unique_identifier)
                     scooter_coordinate = get_vehicle_location(scooter.vehicle_unique_identifier, user.id)
@@ -1386,7 +1386,7 @@ class GetAvailableVehicles(ViewSet):
             return Response({'vehicle_data': all_data }, status=status.HTTP_200_OK)
         except Exception as E:
             print('E: ', str(E))
-            return Response({"message":"Something went wrong", 'Exception': str(E)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({"message":"Something went wrong", 'Exception': str(E)}, status=status.HTTP_400_BAD_REQUEST)
         all_data = {
             "vehicle_data": [
                 {
