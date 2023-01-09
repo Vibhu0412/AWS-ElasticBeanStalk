@@ -1496,11 +1496,12 @@ class GetAvailableVehicles(ViewSet):
                 scooter = key.station_object.filter(vehicle_station=key.id)
                 serializer = StationVehicleSerializer(scooter, many=True)
                 all_data.append({
+                    "station_id": key.id,
                     "location_stand": key.address,
                     "latitude": key.lat,
                     "longitude": key.long,
                 })
-            return Response({'vehicle_data': all_data }, status=status.HTTP_200_OK)
+            return Response({'station_data': all_data }, status=status.HTTP_200_OK)
         except Exception as E:
             print('E: ', str(E))
             return Response({"message":"Something went wrong", 'Exception': str(E)}, status=status.HTTP_400_BAD_REQUEST)
