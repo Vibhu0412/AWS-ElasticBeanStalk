@@ -1493,23 +1493,32 @@ class GetAvailableVehicles(ViewSet):
             
             station_queryset = Station.objects.all()
             for key in station_queryset:
-                # print('key: ', key.station_object.filter(vehicle_station=key.id))
-                # scooter = ast.literal_eval(vehicle[key]) if type(vehicle[key]) == str else [vehicle[key]]
-                # address = geocoder_reverse.delay(scooter[0].get('latitude'), scooter[0].get('longtitude')).get('features')[0].get("properties").get("geocoding").get("label")
-                # print('address: ', address)
                 scooter = key.station_object.filter(vehicle_station=key.id)
                 serializer = StationVehicleSerializer(scooter, many=True)
                 all_data.append({
                     "location_stand": key.address,
                     "latitude": key.lat,
                     "longitude": key.long,
-                    "scooter_data": serializer.data,
                 })
             return Response({'vehicle_data': all_data }, status=status.HTTP_200_OK)
         except Exception as E:
             print('E: ', str(E))
             return Response({"message":"Something went wrong", 'Exception': str(E)}, status=status.HTTP_400_BAD_REQUEST)
     
+    @action(methods=['POST'], detail=False)
+    def vehicle_list(self, request):
+        try:
+            station_id = request.data.get("station_id")
+            user_id = request.user.id
+            update_or_create_vehicle_data(user_id)
+            station_obj = Station.objects.filter(pk=station_id).first()
+            scooter = station_obj.station_object.filter(vehicle_station=station_obj.id)
+            serializer = StationVehicleSerializer(scooter, many=True)
+            return Response({'vehicle_data': serializer.data }, status=status.HTTP_200_OK)
+        except Exception as E:
+            print('E: ', str(E))
+            return Response({"message":"Something went wrong", 'Exception': str(E)}, status=status.HTTP_400_BAD_REQUEST)
+        
     # @action(methods=['POST'], detail=True)
     # def retrieve(self, request, pk):
     #     """
