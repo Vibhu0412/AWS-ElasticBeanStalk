@@ -28,7 +28,7 @@ import time
 from elekgo_app.authentication import JWTAuthentication, create_access_token, create_refresh_token, decode_access_token, decode_refresh_token
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.sessions.backends.db import SessionStore
-from elekgo_app.utils import send_notification, update_or_create_vehicle_data, restructuring_all_vehicles, get_vehicle_location, calculate_ride_distance, carbon_calculation, geocoder_reverse
+from elekgo_app.utils import send_notification, update_or_create_vehicle_data, restructuring_all_vehicles, get_vehicle_location, calculate_ride_distance, carbon_calculation, geocoder_reverse, get_vehicle_detials
 import environ
 from rest_framework.decorators import action
 from elekgo_app.pagination import CustomPagination
@@ -648,6 +648,7 @@ class RideStartStopSerializerView(APIView):
                     unlock_data = unlock_scooter(user.bolt_token, scooter.vehicle_unique_identifier)
                     scooter_coordinate = get_vehicle_location(scooter.vehicle_unique_identifier, user.id)
                     if unlock_data.status_code == 200:
+                        scooter.vehicle_station = None
                         scooter.is_reserved = False
                         scooter.is_unlocked = True
                         scooter.save()
@@ -729,8 +730,16 @@ class RideStartStopSerializerView(APIView):
                 if action == 'end':
                     ride_pause_queryset = RideTimeHistory.objects.filter(ride_table_id=ride_obj)
                     if ride_obj.is_ride_end == False:
+                        update_or_create_vehicle_data(user.id)
+                        val = 0.0010
+                        lat = float(scooter.lat)
+                        long = float(scooter.long)
+                        station_obj = Station.objects.filter(lat__gte=lat-val, lat__lte=lat+val, long__gte=long-val, long__lte=long+val).first()
+                        if station_obj is None:
+                            return Response({'message': 'You cannot end ride here, ride can only be ended at a station'}, status=status.HTTP_400_BAD_REQUEST)
                         lock_data = lock_scooter(user.bolt_token, scooter.vehicle_unique_identifier)
                         if lock_data.status_code == 200:
+                            scooter.vehicle_station = station_obj
                             scooter.is_unlocked = False
                             scooter.save()
                             delta = 0
@@ -846,7 +855,7 @@ class RideStartStopSerializerView(APIView):
                                     'trip_statistics': trip_statistics
                                 }]
                             }, status=status.HTTP_200_OK)
-                        return Response({'message': 'something went wrong'}, status=status.HTTP_404_NOT_FOUND)
+                        return Response({'message': 'something went wrong'}, status=status.HTTP_400_BAD_REQUEST)
                     else:
                         return Response({'message': 'ride already ended'}, status=status.HTTP_400_BAD_REQUEST)
                 

@@ -87,18 +87,15 @@ def update_or_create_vehicle_data(pk):
     
     vehicles = []
     for i in range(len(data.get('vehicles'))):
-      val = 0.0005
+      val = 0.0010
       lat = float(str(data.get('vehicles')[i].get('location').get("latitude"))[0:6])
       long = float(str(data.get('vehicles')[i].get('location').get("longitude"))[0:6])
       station_obj = Station.objects.filter(lat__gte=lat-val, lat__lte=lat+val, long__gte=long-val, long__lte=long+val).first()
-      print('station_obj: ', station_obj)
       if station_obj is not None:
-        vehicles.append(Vehicle(vehicle_unique_identifier=data.get('vehicles')[i].get('vin'), vehicle_station=station_obj))
+        vehicles.append(Vehicle(vehicle_unique_identifier=data.get('vehicles')[i].get('vin'), vehicle_station=station_obj, lat=lat, long=long))
       else:
-        vehicles.append(Vehicle(vehicle_unique_identifier=data.get('vehicles')[i].get('vin'), vehicle_station=None))
-    print('vehicles: ', vehicles[1].vehicle_station)
-    Vehicle.objects.bulk_update_or_create(vehicles, ["vehicle_unique_identifier"], match_field='vehicle_unique_identifier')
-    print('Vehicle: ', Vehicle.objects.all().values("vehicle_station"))
+        vehicles.append(Vehicle(vehicle_unique_identifier=data.get('vehicles')[i].get('vin'), vehicle_station=None, lat=lat, long=long))
+    Vehicle.objects.bulk_update_or_create(vehicles, ["vehicle_unique_identifier", "vehicle_station", "lat", "long"], match_field='vehicle_unique_identifier')
   else:
     return response
 
