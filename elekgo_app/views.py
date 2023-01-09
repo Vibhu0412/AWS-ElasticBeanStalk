@@ -1,14 +1,14 @@
 import json
 
 from rest_framework.views import APIView
-from rest_framework.viewsets import ViewSet
+from rest_framework.viewsets import ViewSet, ModelViewSet
 from .renderers import UserRenderer
 from .serializers import PhoneOtpSerializer, UserLoginSerializer, UserRegistrationSerializer, VerifyAccountSerializer, \
     ResendOtpSerializer, VerifyAccountSerializerLogin, FrequentlyAskedQuestionSerializer, UserKycVerificationSerializer,\
     VehicleReportSerializer, ChangePasswordSerializer, CustomerSatisfactionSerializer, PaymentModelSerializer, \
     UserPaymentAccountSerializer, RideStartStopSerializer, NotificationSerializer, AdminUserLoginSerializer, AdminUserRegistrationSerializer,\
     GetAllUserSerializer, RideRunningTimeGet, GetAllKycUserSerializer, UserRideSerializer, UserRideDetailsSerializer, \
-    GetAllUsersSerializer, ReserveSerializer
+    GetAllUsersSerializer, ReserveSerializer, StationSerializer, UserSerializer
 import ast
 from geopy.geocoders import Nominatim
 from geopy.distance import geodesic
@@ -17,7 +17,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from .emails import *
 from .models import FrequentlyAskedQuestions, CustomerSatisfaction, UserPaymentAccount, PaymentModel, Vehicle, \
-    RideTable, NotificationModel, RideTimeHistory
+    RideTable, NotificationModel, RideTimeHistory, Station
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from decouple import config
@@ -65,15 +65,11 @@ def unlock_scooter(token, vin):
     print("IN UNLOCK SCOOTER =============================== ")
     url = f"https://bookings.revos.in/vehicles/{vin}/unlock"
 
-    print("url=============================== ", url)
-    print("token=============================== ", token)
-
     headers = {
         'token': os.getenv('bolt_app_token'),
         'authorization': token
     }
     response = requests.request("POST", url, headers=headers)
-    print(response, "===================RESPONSE", response.json())
     return response
 
 
@@ -84,7 +80,6 @@ def lock_scooter(token, vin):
         'authorization': token
     }
     response = requests.request("POST", url, headers=headers)
-    print('response: ', response.json())
     return response
 
 
@@ -1502,6 +1497,11 @@ class GetAvailableVehicles(ViewSet):
     #     response_data = {"data": serializer.data}
     #     return Response(response_data, status=status.HTTP_200_OK)
 
+    @action(methods=['GET'], detail=False)
+    def station_list(self, request):
+        station_list = Station.objects.all()
+        
+
     @action(methods=['POST'], detail=False)
     def reserve(self, request):
         """api for reserve vehicle, reservation will be only available for 30 minutes,
@@ -1638,6 +1638,35 @@ class CreateNewPassword(APIView):
         return Response({
             "msg": "something went wrong"
         }, status=status.HTTP_400_BAD_REQUEST)
+
+class UserViewSet(ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+class StationApi(ModelViewSet):
+    queryset = Station.objects.all()
+    serializer_class = StationSerializer
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 # class VerifyOtpLogin(APIView):

@@ -6,7 +6,7 @@ import requests
 import json
 
 from authy.api import AuthyApiClient 
-from elekgo_app.models import NotificationModel, User, Vehicle
+from elekgo_app.models import NotificationModel, User, Vehicle, Station
 from geopy import distance
 
 FCM_CLOUD_API_KEY = os.getenv('FCM_CLOUD_API_KEY')
@@ -56,6 +56,23 @@ def send_notification(fcm_token, title, desc, user):
     NotificationModel.objects.create(user_id=user, notification_title=title, notification_description=desc)
   return response
 
+def get_vehicle_location(vin, pk):
+  user = User.objects.get(id=pk)
+  url = 'https://bookings.revos.in/user/vehicles/all'
+  headers = {
+      'token': os.getenv('bolt_app_token'),
+      'authorization': user.bolt_token
+  }
+  response = requests.request("GET", url, headers=headers)
+  if response.status_code == status.HTTP_200_OK:
+    data = response.json()
+    for key in data.get("vehicles"):
+      if key.get("vin") == vin:
+        coordinate = str(key.get("location").get("latitude"))[0:9] + "," + str(key.get("location").get("longitude"))[0:9]
+        return coordinate
+  else:
+    raise exceptions.JsonResponse("Bad response from bolt get all vehicle api")
+
 def update_or_create_vehicle_data(pk):
   """Utitlity for getting all vehicles list from bolt api and updating project's database"""
   user = User.objects.get(id=pk)
@@ -70,7 +87,11 @@ def update_or_create_vehicle_data(pk):
     
     vehicles = []
     for i in range(len(data.get('vehicles'))):
-      vehicles.append(Vehicle(vehicle_unique_identifier=data.get('vehicles')[i].get('vin')))
+      val = 0.0005
+      lat = float(str(data.get('vehicles')[i].get('location').get("latitude"))[0:6])
+      long = float(str(data.get('vehicles')[i].get('location').get("longitude"))[0:6])
+      station_obj = Station.objects.filter(lat__gte=lat-val, lat__lte=lat+val, long__gte=long-val, long__lte=long+val).first()
+      vehicles.append(Vehicle(vehicle_unique_identifier=data.get('vehicles')[i].get('vin'), vehicle_station=station_obj))
     Vehicle.objects.bulk_update_or_create(vehicles, ["vehicle_unique_identifier"], match_field='vehicle_unique_identifier')
   else:
     return response
@@ -175,23 +196,6 @@ def restructuring_all_vehicles(pk):
   else:
     return response      
 
-def get_vehicle_location(vin, pk):
-  user = User.objects.get(id=pk)
-  url = 'https://bookings.revos.in/user/vehicles/all'
-  headers = {
-      'token': os.getenv('bolt_app_token'),
-      'authorization': user.bolt_token
-  }
-  response = requests.request("GET", url, headers=headers)
-  if response.status_code == status.HTTP_200_OK:
-    data = response.json()
-    for key in data.get("vehicles"):
-      if key.get("vin") == vin:
-        coordinate = str(key.get("location").get("latitude"))[0:9] + "," + str(key.get("location").get("longitude"))[0:9]
-        return coordinate
-  else:
-    raise exceptions.JsonResponse("Bad response from bolt get all vehicle api")
-
 def calculate_ride_distance(start, end):
   """start and end are start and end coordinates respectively"""
   start = start.split(",")
@@ -205,9 +209,6 @@ def carbon_calculation(ride_km):
   carbon_emmision_per_km = 90
   ride_carbon_footprint = round(ride_km * carbon_emmision_per_km, 2)
   return ride_carbon_footprint
-
-def timer(vin, user):
-  pass    
 
 
 

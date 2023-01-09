@@ -4,6 +4,8 @@ from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
 router.register("get_available_vehicles", views.GetAvailableVehicles, basename="vehicle")
+router.register("station", views.StationApi, basename="station")
+router.register("user", views.UserViewSet , basename="user")
 
 urlpatterns = [
     path('register/', views.RegisterUserView.as_view(), name='register'),

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import User, VehicleReportModel, CustomerSatisfaction, PaymentModel, UserPaymentAccount, \
-  NotificationModel, RideTable, Vehicle
+  NotificationModel, RideTable, Vehicle, Station
 from time import strftime, gmtime
 import datetime
 from django.db.models import Sum
@@ -383,6 +383,12 @@ class ReserveSerializer(serializers.ModelSerializer):
     model = Vehicle
     fields = ["battery_percentage", "scooter_number", "number_of_km_used", "per_min_charge", "is_reserved", "reserverd_user_id"]
 
+class StationSerializer(serializers.ModelSerializer):
+  class Meta:
+    model = Station
+    fields = "__all__"
 
-
-
+class UserSerializer(serializers.ModelSerializer):
+  class Meta:
+    model = User
+    exclude = ["password", "is_email_verified", "otp", "bolt_id", "bolt_token", "fcm_token"]

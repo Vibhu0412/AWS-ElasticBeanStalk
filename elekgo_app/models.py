@@ -120,6 +120,8 @@ class User(AbstractBaseUser):
     user_aadhar_identification_num = models.BigIntegerField(null=True, blank=True, unique=True)
     total_carbon_saved = models.FloatField(_("Carbon saved in grams"), default=0)
     total_km = models.FloatField(_("Total Kilometer travelled"), default=0)
+    driving_score = models.FloatField(_("Driving score"), default=0)
+    avg_speed = models.FloatField(_("Average speed"), default=0)
 
     # admin User Fields
     user_role = models.PositiveSmallIntegerField(choices=USER_TYPE_CHOICES, default=5)
@@ -210,9 +212,21 @@ class UserPaymentAccount(models.Model):
     def __str__(self):
         return str(self.account_user_id)
 
+class Station(models.Model):
+    """station model
+    available vehicles field represents at present no of vehicles at station regardless of reservation
+    booked vehicle will not to be considered as available vehicle
+    """
+    station_name = models.CharField(_("Station Name"), max_length=50)
+    address = models.TextField(_("Station address"))
+    area = models.CharField(_("Area of station"), max_length=50)
+    lat = models.CharField(_("Latitude of Station"), max_length=50)
+    long = models.CharField(_("Longitude of station"), max_length=50)
+
 
 class Vehicle(models.Model):
     vehicle_unique_identifier = models.CharField(max_length=100, unique=True, verbose_name="Scooter Chassis Number/VIN Number", null=True)
+    vehicle_station = models.ForeignKey(Station, verbose_name=_("Vehicle Station"), on_delete=models.PROTECT)
     qr_image = models.ImageField(blank=True, null=True, upload_to='static/QRCode')
     battery_percentage = models.IntegerField(null=True)
     iot_device_number = models.CharField(max_length=100, null=True)
