@@ -392,3 +392,8 @@ class UserSerializer(serializers.ModelSerializer):
   class Meta:
     model = User
     exclude = ["password", "is_email_verified", "otp", "bolt_id", "bolt_token", "fcm_token"]
+
+class StationVehicleSerializer(serializers.ModelSerializer):
+  class Meta:
+    model = Vehicle
+    exclude = ["vehicle_station", "id", "celery_task_id", "qr_image", "iot_device_number", "battery_number", "current_location"]

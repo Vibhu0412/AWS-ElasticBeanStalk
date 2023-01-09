@@ -8,7 +8,7 @@ from .serializers import PhoneOtpSerializer, UserLoginSerializer, UserRegistrati
     VehicleReportSerializer, ChangePasswordSerializer, CustomerSatisfactionSerializer, PaymentModelSerializer, \
     UserPaymentAccountSerializer, RideStartStopSerializer, NotificationSerializer, AdminUserLoginSerializer, AdminUserRegistrationSerializer,\
     GetAllUserSerializer, RideRunningTimeGet, GetAllKycUserSerializer, UserRideSerializer, UserRideDetailsSerializer, \
-    GetAllUsersSerializer, ReserveSerializer, StationSerializer, UserSerializer
+    GetAllUsersSerializer, ReserveSerializer, StationSerializer, UserSerializer, StationVehicleSerializer
 import ast
 from geopy.geocoders import Nominatim
 from geopy.distance import geodesic
@@ -1359,7 +1359,6 @@ class GetAvailableVehicles(ViewSet):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    
     def list(self, request):
         all_data = []
         pk = request.user.id
@@ -1483,6 +1482,33 @@ class GetAvailableVehicles(ViewSet):
             ]
         }
         return Response(all_data, status=status.HTTP_200_OK)
+
+
+    @action(methods=['GET'], detail=False)
+    def station_list(self, request):
+        try:
+            all_data = []
+            pk = request.user.id
+            update_or_create_vehicle_data(pk)
+            
+            station_queryset = Station.objects.all()
+            for key in station_queryset:
+                # print('key: ', key.station_object.filter(vehicle_station=key.id))
+                # scooter = ast.literal_eval(vehicle[key]) if type(vehicle[key]) == str else [vehicle[key]]
+                # address = geocoder_reverse.delay(scooter[0].get('latitude'), scooter[0].get('longtitude')).get('features')[0].get("properties").get("geocoding").get("label")
+                # print('address: ', address)
+                scooter = key.station_object.filter(vehicle_station=key.id)
+                serializer = StationVehicleSerializer(scooter, many=True)
+                all_data.append({
+                    "location_stand": key.address,
+                    "latitude": key.lat,
+                    "longitude": key.long,
+                    "scooter_data": serializer.data,
+                })
+            return Response({'vehicle_data': all_data }, status=status.HTTP_200_OK)
+        except Exception as E:
+            print('E: ', str(E))
+            return Response({"message":"Something went wrong", 'Exception': str(E)}, status=status.HTTP_400_BAD_REQUEST)
     
     # @action(methods=['POST'], detail=True)
     # def retrieve(self, request, pk):
@@ -1495,12 +1521,7 @@ class GetAvailableVehicles(ViewSet):
     #     vehicle_obj = Vehicle.objects.get_or_create(vehicle_unique_identifier=vehicle_unique_identifier)
     #     serializer = ReserveSerializer(vehicle_obj)
     #     response_data = {"data": serializer.data}
-    #     return Response(response_data, status=status.HTTP_200_OK)
-
-    @action(methods=['GET'], detail=False)
-    def station_list(self, request):
-        station_list = Station.objects.all()
-        
+    #     return Response(response_data, status=status.HTTP_200_OK)        
 
     @action(methods=['POST'], detail=False)
     def reserve(self, request):
@@ -1639,11 +1660,13 @@ class CreateNewPassword(APIView):
             "msg": "something went wrong"
         }, status=status.HTTP_400_BAD_REQUEST)
 
+
 class UserViewSet(ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
+
 
 class StationApi(ModelViewSet):
     queryset = Station.objects.all()
