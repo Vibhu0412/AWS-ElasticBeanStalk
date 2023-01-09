@@ -139,7 +139,7 @@ class RegisterUserView(APIView):
         else:
             return Response({
                 "message": "Data not found"
-            }, status=status.HTTP_404_NOT_FOUND)
+            }, status=status.HTTP_400_BAD_REQUEST)
 
 
 class VerifyOTP(APIView):
@@ -236,7 +236,7 @@ class UserLoginWithEmail(APIView):
                 return Response({
                     'message': "user has not verified the email, please check your email and verify it using OTP sent to your email address",
                     'user_id': user.id
-                }, status.HTTP_404_NOT_FOUND)
+                }, status.HTTP_400_BAD_REQUEST)
             return Response({
                 'message': "username or password does not match!! please enter correct credentials"
             }, status=status.HTTP_400_BAD_REQUEST)
@@ -294,10 +294,10 @@ class VerifyOtpLogin(APIView):
                     # "refresh_access_token":refresh_access_token.decode(),
                     "bolt_token": user_auth_token
                 }, status=status.HTTP_200_OK)
-            return Response(data, status=status.HTTP_404_NOT_FOUND)
+            return Response(data, status=status.HTTP_400_BAD_REQUEST)
         return Response({
             "message":"Something wents wrong"
-        }, status=status.HTTP_404_NOT_FOUND)
+        }, status=status.HTTP_400_BAD_REQUEST)
 
 
 class SendMobileOtp(APIView):
@@ -364,7 +364,7 @@ class ResendOtpSerializerView(APIView):
                 except:
                     return Response({
                         'message': 'user not found with the email and id'
-                    }, status=status.HTTP_404_NOT_FOUND)
+                    }, status=status.HTTP_400_BAD_REQUEST)
             if phone:
                 try:
                     user = User.objects.get(id=user_id, phone=phone)
@@ -378,8 +378,8 @@ class ResendOtpSerializerView(APIView):
                 except:
                     return Response({
                         'message': 'user not found with the phone and id'
-                    }, status=status.HTTP_404_NOT_FOUND)
-        return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
+                    }, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class FAQSerializerView(APIView):
@@ -432,7 +432,7 @@ class UserKycVerificationSerializerView(APIView):
             except Exception as e:
                 return Response({
                     'message': str(e)
-                }, status=status.HTTP_404_NOT_FOUND)
+                }, status=status.HTTP_400_BAD_REQUEST)
             # return Response(serializer.data, )
         return Response(serializer.errors, status.HTTP_400_BAD_REQUEST)
 
@@ -490,7 +490,7 @@ class ChangePasswordView(APIView):
                     'message': str(e)
                 }, status=status.HTTP_400_BAD_REQUEST)
         else:
-            return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class UpdateProfileView(APIView):
@@ -537,7 +537,7 @@ class CustomerSatisfactionView(APIView):
                 return Response({
                     "message": "Thank You,Your response saved successfully"
                     }, status=status.HTTP_200_OK)
-            return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except:
             serializer = CustomerSatisfactionSerializer(data=request.data)
             if serializer.is_valid():
@@ -549,7 +549,7 @@ class CustomerSatisfactionView(APIView):
                 return Response({
                     "message": "Thank You,Your response saved successfully"
                     }, status=status.HTTP_200_OK)
-            return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class PaymentView(APIView):
@@ -860,8 +860,8 @@ class RideStartStopSerializerView(APIView):
                         return Response({'message': 'ride already ended'}, status=status.HTTP_400_BAD_REQUEST)
                 
             except Exception as e:
-                return Response({'message': str(e)}, status=status.HTTP_404_NOT_FOUND)
-        return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
+                return Response({'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ScanBarcodeView(APIView):
@@ -927,10 +927,10 @@ class ScanBarcodeView(APIView):
             except Exception as e:
                 return Response({
                     'message': str(e)
-                }, status=status.HTTP_404_NOT_FOUND)
+                }, status=status.HTTP_400_BAD_REQUEST)
         return Response({
             'scooter_chassis_no': 'This field is required'
-        }, status=status.HTTP_404_NOT_FOUND)
+        }, status=status.HTTP_400_BAD_REQUEST)
 
 
 class AllNotifications(APIView):
@@ -1015,9 +1015,9 @@ class AdminUserRegisterUserView(APIView):
                 }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         else:
             return Response({
-                "status_code": 404,
+                "status_code": 400,
                 "message": "Data not found"
-            }, status=status.HTTP_404_NOT_FOUND)
+            }, status=status.HTTP_400_BAD_REQUEST)
 
 
 class AdminUserLogin(APIView):
@@ -1064,10 +1064,10 @@ class AdminUserLogin(APIView):
                     return Response(data, status=status.HTTP_400_BAD_REQUEST)
                 # send_otp_via_email(user.email)
                 return Response({
-                    "status_code": 404,
+                    "status_code": 400,
                     'message': "user has not verified the email, please check your email and verify it using OTP sent to your email address",
                     'user_id': user.id
-                }, status.HTTP_404_NOT_FOUND)
+                }, status.HTTP_400_BAD_REQUEST)
             return Response({
                 "status_code": 400,
                 'message': "username or password does not match!! please enter correct credentials"
@@ -1104,7 +1104,7 @@ class GetCurrentRideTime(APIView):
                 if ride_id is None:
                     return Response({
                         'message': 'User Data or Vehicle Data does not match with ride data.'
-                    }, status=status.HTTP_404_NOT_FOUND)
+                    }, status=status.HTTP_400_BAD_REQUEST)
                     
                 current = datetime.datetime.strptime(str(current_time), "%H:%M:%S")
                 start = datetime.datetime.strptime(str(ride_id.start_time), "%H:%M:%S")
@@ -1119,8 +1119,8 @@ class GetCurrentRideTime(APIView):
             except Exception as e:
                 return Response({
                     'message': str(e)
-                }, status=status.HTTP_404_NOT_FOUND)
-        return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
+                }, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class GetAllKycUsers(APIView):
@@ -1192,7 +1192,7 @@ class GetUserKycUpdate(APIView):
             response = {
                 'message': str(e)
             }
-            return Response(response, status=status.HTTP_404_NOT_FOUND)
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
 
 
 class CompleteRideDetail(APIView):
@@ -1223,7 +1223,7 @@ class CompleteRideDetail(APIView):
             response = {
                 "message": str(e)
             }
-            return Response(response, status=status.HTTP_404_NOT_FOUND)
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
 
 
 class UnlockScooter(APIView):
@@ -1667,7 +1667,7 @@ class CreateNewPassword(APIView):
         except:
             return Response({
                 "msg": "User not found or session expired"
-            }, status=status.HTTP_404_NOT_FOUND)
+            }, status=status.HTTP_400_BAD_REQUEST)
         user = User.objects.get(email=data)
         if user and new_password == confirm_password:
             user.set_password(new_password)
@@ -1760,7 +1760,7 @@ class StationApi(ModelViewSet):
 #                     "refresh": refresh_access_token,
 #                     "bolt_token": user_auth_token
 #                 }, status=status.HTTP_200_OK)
-#             return Response(data, status=status.HTTP_404_NOT_FOUND)
+#             return Response(data, status=status.HTTP_400_BAD_REQUEST)
 #         return Response({
 #             "message":"Something wents wrong"
-#         }, status=status.HTTP_404_NOT_FOUND)
+#         }, status=status.HTTP_400_BAD_REQUEST)
