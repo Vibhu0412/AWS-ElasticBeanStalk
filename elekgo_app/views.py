@@ -737,12 +737,12 @@ class RideStartStopSerializerView(APIView):
                     ride_pause_queryset = RideTimeHistory.objects.filter(ride_table_id=ride_obj)
                     if ride_obj.is_ride_end == False:
                         update_or_create_vehicle_data(user.id)
-                        val = 0.0010
-                        lat = float(scooter.lat)
-                        long = float(scooter.long)
-                        station_obj = Station.objects.filter(lat__gte=lat-val, lat__lte=lat+val, long__gte=long-val, long__lte=long+val).first()
-                        if station_obj is None:
-                            return Response({'message': 'You cannot end ride here, ride can only be ended at a station'}, status=status.HTTP_400_BAD_REQUEST)
+                        # val = 0.0010
+                        # lat = float(scooter.lat)
+                        # long = float(scooter.long)
+                        # station_obj = Station.objects.filter(lat__gte=lat-val, lat__lte=lat+val, long__gte=long-val, long__lte=long+val).first()
+                        # if station_obj is None:
+                        #     return Response({'message': 'You cannot end ride here, ride can only be ended at a station'}, status=status.HTTP_400_BAD_REQUEST)
                         lock_data = lock_scooter(user.bolt_token, scooter.vehicle_unique_identifier)
                         if lock_data.status_code == 200:
                             scooter.vehicle_station = station_obj
