@@ -286,12 +286,12 @@ class RideTable(models.Model):
     payment_id = models.ForeignKey(PaymentModel, on_delete=models.CASCADE, null=True, blank=True)
     start_location = models.CharField(max_length=500, null=True, blank=True)
     end_location = models.CharField(max_length=500, null=True, blank=True)
-    running_cost = models.FloatField(_("Running cost"))
-    pause_cost = models.FloatField(_("Pause cost"))
-    total_cost = models.FloatField(_("Total cost"))
-    gst_cost = models.FloatField(_("GST applied"))
-    total_cost_with_gst = models.FloatField(_("Total cost with GST"))
-    ride_km = models.FloatField(_("Ride distance"))
+    running_cost = models.FloatField(_("Running cost"), null=True, blank=True)
+    pause_cost = models.FloatField(_("Pause cost"), null=True, blank=True)
+    total_cost = models.FloatField(_("Total cost"), null=True, blank=True)
+    gst_cost = models.FloatField(_("GST applied"), null=True, blank=True)
+    total_cost_with_gst = models.FloatField(_("Total cost with GST"), null=True, blank=True)
+    ride_km = models.FloatField(_("Ride distance"), null=True, blank=True)
 
     def __str__(self):
         return str(self.vehicle_id)

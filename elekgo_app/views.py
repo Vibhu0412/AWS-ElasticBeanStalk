@@ -852,7 +852,8 @@ class RideStartStopSerializerView(APIView):
                             payment = PaymentModel(payment_user_id=user, payment_amount=-total_cost_with_gst, payment_date=datetime.date.today(), payment_note='Book Ride')
                             payment.save()
                             user_payment = UserPaymentAccount.objects.get_or_create(account_user_id=payment.payment_user_id)
-                            user_payment.account_amount = (float(user_payment.account_amount) - float(total_cost_with_gst)) if user_payment else 0
+                            user_payment = user_payment[0]
+                            user_payment.account_amount = float(user_payment.account_amount) if user_payment else 0 - float(total_cost_with_gst)
                             user_payment.save()
                             ride_obj.payment_id = payment
                             ride_obj.save()
