@@ -745,7 +745,7 @@ class RideStartStopSerializerView(APIView):
                         #     return Response({'message': 'You cannot end ride here, ride can only be ended at a station'}, status=status.HTTP_400_BAD_REQUEST)
                         lock_data = lock_scooter(user.bolt_token, scooter.vehicle_unique_identifier)
                         if lock_data.status_code == 200:
-                            scooter.vehicle_station = station_obj
+                            # scooter.vehicle_station = station_obj
                             scooter.is_unlocked = False
                             scooter.save()
                             delta = 0
