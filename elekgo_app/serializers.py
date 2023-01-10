@@ -239,7 +239,7 @@ class UserRideSerializer(serializers.ModelSerializer):
 
   def get_total_charge(self, obj):
     ride = RideTable.objects.get(id=obj.id)
-    total_charge = str(ride.payment_id.payment_amount)
+    total_charge = str(ride.payment_id.payment_amount) if ride.payment_id else 0
     return total_charge
 
 
