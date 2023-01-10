@@ -4,7 +4,7 @@ import requests
 from elekgo_app.models import Vehicle
 
 @shared_task
-def countdown_timer(vid, t=1800):
+def countdown_timer(vid, t=600):
     while t:
         mins, secs = divmod(t, 60)
         timer = '{:02d}:{:02d}'.format(mins, secs)

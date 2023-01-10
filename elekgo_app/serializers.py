@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import User, VehicleReportModel, CustomerSatisfaction, PaymentModel, UserPaymentAccount, \
-  NotificationModel, RideTable, Vehicle, Station
+  NotificationModel, RideTable, Vehicle, Station, Voucher
 from time import strftime, gmtime
 import datetime
 from django.db.models import Sum
@@ -397,3 +397,8 @@ class StationVehicleSerializer(serializers.ModelSerializer):
   class Meta:
     model = Vehicle
     exclude = ["vehicle_station", "id", "celery_task_id", "qr_image", "iot_device_number", "battery_number", "current_location"]
+    
+class VoucherSerializer(serializers.ModelSerializer):
+  class Meta:
+    model = Voucher
+    fields = "__all__"

@@ -8,7 +8,7 @@ from .serializers import PhoneOtpSerializer, UserLoginSerializer, UserRegistrati
     VehicleReportSerializer, ChangePasswordSerializer, CustomerSatisfactionSerializer, PaymentModelSerializer, \
     UserPaymentAccountSerializer, RideStartStopSerializer, NotificationSerializer, AdminUserLoginSerializer, AdminUserRegistrationSerializer,\
     GetAllUserSerializer, RideRunningTimeGet, GetAllKycUserSerializer, UserRideSerializer, UserRideDetailsSerializer, \
-    GetAllUsersSerializer, ReserveSerializer, StationSerializer, UserSerializer, StationVehicleSerializer
+    GetAllUsersSerializer, ReserveSerializer, StationSerializer, UserSerializer, StationVehicleSerializer, VoucherSerializer
 import ast
 from geopy.geocoders import Nominatim
 from geopy.distance import geodesic
@@ -17,7 +17,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from .emails import *
 from .models import FrequentlyAskedQuestions, CustomerSatisfaction, UserPaymentAccount, PaymentModel, Vehicle, \
-    RideTable, NotificationModel, RideTimeHistory, Station
+    RideTable, NotificationModel, RideTimeHistory, Station, Voucher
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from decouple import config
@@ -26,6 +26,7 @@ import datetime
 import requests
 import time
 from elekgo_app.authentication import JWTAuthentication, create_access_token, create_refresh_token, decode_access_token, decode_refresh_token
+from elekgo_app.user_permissions import IsAdminUser
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.sessions.backends.db import SessionStore
 from elekgo_app.utils import send_notification, update_or_create_vehicle_data, restructuring_all_vehicles, get_vehicle_location, calculate_ride_distance, carbon_calculation, geocoder_reverse, get_vehicle_detials
@@ -812,6 +813,7 @@ class RideStartStopSerializerView(APIView):
                             
                             total_cost = None
                             pause_cost = None
+                            running_cost = None
                             if ratio <= (1/3):
                                 running_cost = (total_running_time) * per_min_running_charge
                                 pause_cost = (total_pause_time) * per_min_pause_charge
@@ -823,8 +825,15 @@ class RideStartStopSerializerView(APIView):
                                 running_cost = considered_running_min * per_min_running_charge
                                 total_cost = running_cost + pause_cost
                                 
-                            gst_cost = total_cost * 5 / 100
+                            gst_cost = total_cost * (18 / 100)
                             total_cost_with_gst = round(total_cost + gst_cost, 2)
+                            ride_obj.running_cost = running_cost
+                            ride_obj.pause_cost = pause_cost
+                            ride_obj.total_cost = total_cost
+                            ride_obj.gst_cost = gst_cost
+                            ride_obj.total_cost_with_gst = total_cost_with_gst
+                            ride_obj.ride_km = ride_distance
+                            ride_obj.save()
                             
                             trip_statistics = {
                                 "per_minute_charges_on_running": per_min_running_charge,
@@ -834,16 +843,17 @@ class RideStartStopSerializerView(APIView):
                                 "total_min_cost": round(total_cost, 2),
                                 "total_pause_cost": round(pause_cost, 2),
                                 "total_km": ride_distance,
-                                "gst": '5%',
+                                "gst": '18%',
                                 "gst_cost": round(gst_cost, 2),
                                 "total_cost": total_cost_with_gst,
+                                "total_ride_min": f'{time.strftime("%M:%S", time.gmtime(float(total_time)*60))} Min' if total_time else '00:00 Min'
                             }
                             
                             payment = PaymentModel(payment_user_id=user, payment_amount=-total_cost_with_gst, payment_date=datetime.date.today(), payment_note='Book Ride')
                             payment.save()
-                            # user_payment = UserPaymentAccount.objects.get_or_create(account_user_id=payment.payment_user_id)
-                            # user_payment.account_amount = (float(user_payment.account_amount) - float(total_cost_with_gst)) if user_payment.account_amount else 0
-                            # user_payment.save()
+                            user_payment = UserPaymentAccount.objects.get_or_create(account_user_id=payment.payment_user_id)
+                            user_payment.account_amount = (float(user_payment.account_amount) - float(total_cost_with_gst)) if user_payment else 0
+                            user_payment.save()
                             ride_obj.payment_id = payment
                             ride_obj.save()
                             
@@ -1259,27 +1269,17 @@ class UserRideDetails(APIView):
         ride = RideTable.objects.get(id=ride_id, is_ride_end=True)
         ride_data = RideTable.objects.filter(id=ride_id, is_ride_end=True)
         serializer = UserRideDetailsSerializer(ride_data, many=True)
-        ride_pause_time_in_secondes = str(ride.total_pause_time)
-        final_time = str(ride.total_running_time)
-        total_km = 3
-        per_min_cost_on_running = round(float(ride.vehicle_id.per_min_charge) / 60, 4)
-        per_min_pause_cost = round(float(ride.vehicle_id.per_pause_charge) / 60, 4)
-        ride_pause_time_cost = float(ride_pause_time_in_secondes) * float(per_min_pause_cost) if ride.pause_time else 0
-        ride_run_time_cost = float(final_time) * float(per_min_cost_on_running)
-        total_cost = float(per_min_cost_on_running) * float(final_time) + (ride_pause_time_cost)
-        gst_cost = total_cost * 5 / 100
-        total_cost_with_gst = round(total_cost + gst_cost, 2)
         trip_statistics = {
             "per_minute_charges_on_running": 2.5,
-            "total_running_mins": f'{time.strftime("%M:%S", time.gmtime(int(final_time)))} Min',
+            "total_running_mins": f'{time.strftime("%M:%S", time.gmtime(int(ride.total_running_time)))} Min',
             "per_minute_charges_on_pause": 0.5,
-            "total_pause_mins": f'{time.strftime("%M:%S", time.gmtime(int(ride_pause_time_in_secondes)))} Min' if ride.total_pause_time else '00:00 Min',
-            "total_min_cost": round(ride_run_time_cost, 2),
-            "total_pause_cost": round(ride_pause_time_cost, 2),
-            "total_km": total_km,
-            "gst": '5%',
-            "gst_cost": round(gst_cost, 2),
-            "total_cost": total_cost_with_gst,
+            "total_pause_mins": f'{time.strftime("%M:%S", time.gmtime(int(ride.total_pause_time)))} Min' if ride.total_pause_time else '00:00 Min',
+            "total_min_cost": round(ride.running_cost, 2),
+            "total_pause_cost": round(ride.pause_cost, 2),
+            "total_km": ride.ride_km,
+            "gst": '18%',
+            "gst_cost": round(ride.gst_cost, 2),
+            "total_cost": round(ride.total_cost_with_gst, 2),
         }
         return Response({
             "data": serializer.data[0],
@@ -1544,7 +1544,7 @@ class GetAvailableVehicles(ViewSet):
 
     @action(methods=['POST'], detail=False)
     def reserve(self, request):
-        """api for reserve vehicle, reservation will be only available for 30 minutes,
+        """api for reserve vehicle, reservation will be only available for 10 minutes,
         after 30 minutes it will be released to reserve
         request data is vehicle id
         """
@@ -1564,7 +1564,7 @@ class GetAvailableVehicles(ViewSet):
             timer = countdown_timer.delay(vid)
             Vehicle.objects.filter(vehicle_unique_identifier=vid).update(celery_task_id=timer.id)
             serializer = ReserveSerializer(vehicle_obj)
-            response_data = {"data": serializer.data, "message": "Vehicle reserved for 30 minutes"}
+            response_data = {"data": serializer.data, "message": "Vehicle reserved for 10 minutes"}
             return Response(response_data, status=status.HTTP_200_OK)
         except Exception as E:
             response_data = {"data": E, "message": "Something went wrong"}
@@ -1691,9 +1691,13 @@ class StationApi(ModelViewSet):
     queryset = Station.objects.all()
     serializer_class = StationSerializer
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminUser]
 
-
+class VoucherApi(ModelViewSet):
+    queryset = Voucher.objects.all()
+    serializer_class = VoucherSerializer
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAdminUser]
 
 
 

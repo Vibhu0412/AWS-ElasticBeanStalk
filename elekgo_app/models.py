@@ -10,6 +10,8 @@ from io import BytesIO
 from django.core.files import File
 from bulk_update_or_create import BulkUpdateOrCreateQuerySet
 from django.utils.translation import gettext_lazy as _
+import secrets
+from django.db.models.signals import post_save
 
 
 # Create your models here.
@@ -284,6 +286,12 @@ class RideTable(models.Model):
     payment_id = models.ForeignKey(PaymentModel, on_delete=models.CASCADE, null=True, blank=True)
     start_location = models.CharField(max_length=500, null=True, blank=True)
     end_location = models.CharField(max_length=500, null=True, blank=True)
+    running_cost = models.FloatField(_("Running cost"))
+    pause_cost = models.FloatField(_("Pause cost"))
+    total_cost = models.FloatField(_("Total cost"))
+    gst_cost = models.FloatField(_("GST applied"))
+    total_cost_with_gst = models.FloatField(_("Total cost with GST"))
+    ride_km = models.FloatField(_("Ride distance"))
 
     def __str__(self):
         return str(self.vehicle_id)
@@ -304,3 +312,31 @@ class NotificationModel(models.Model):
 
     def __str__(self):
         return str(self.notification_title)
+    
+class Voucher(models.Model):
+    """
+    Voucher can be used only once and it is series of auto generated alphanumeric value
+    on using voucher user can get a amount of balance in their account
+    """
+    code = models.CharField(_("Voucher Code"), max_length=8, unique=True, null=True, blank=True)
+    amount = models.FloatField(_("Amount"))
+    is_active = models.BooleanField(default=True)
+    is_used = models.BooleanField(_("Is voucher Used"), default=False)
+    used_by = models.ForeignKey(User, verbose_name=_("Voucher used by user"), on_delete=models.CASCADE, null=True, blank=True)
+        
+    def __str__(self):
+        return "%s" % (self.code,)
+
+    @classmethod
+    def post_create(cls, sender, instance, created, *args, **kwargs):
+        if created:
+            id_string = str(instance.id)
+            upper_alpha = "ABCDEFGHJKLMNPQRSTVWXYZ1234567890"
+            random_str = "".join(secrets.choice(upper_alpha) for i in range(8))
+            instance.code = (id_string + random_str)[-8:]
+            instance.save()
+
+    def __str__(self):
+        return "%s" % (self.code,)
+
+post_save.connect(Voucher.post_create, sender=Voucher)
