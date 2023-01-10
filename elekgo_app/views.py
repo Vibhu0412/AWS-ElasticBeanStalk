@@ -264,7 +264,7 @@ class VerifyOtpLogin(APIView):
 
             url = "https://auth.revos.in/user/login/open"
             payload = {
-                "UID": user.bolt_id
+                "UID": user.id
             }
             headers = {
                 'token': os.getenv('bolt_app_token')
