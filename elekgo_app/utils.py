@@ -108,6 +108,17 @@ def get_vehicle_detials(vin, user):
   response = requests.request("GET", url, headers=headers)
   return response
 
+def geocode_reverse_coordinate(coordinate):
+  try:
+    lat = coordinate[0]
+    long = coordinate[1]
+    url = f"https://nominatim.openstreetmap.org/reverse?lat={lat}&lon={long}&format=geocodejson&addressdetails=1"
+    response = requests.request("GET", url)
+    return response.json()
+  except Exception as E:
+    print('E: ', str(E))
+    return None
+
 def geocoder_reverse(lat, long):
   """lat long must be strings only and for now it is on 6 or 7 decimal points"""
   try:

@@ -179,25 +179,35 @@ class GetReportingDataView(APIView):
                 if range == 'YTD':
                     start_date = datetime.date(year=datetime.date.today().year, month=1, day=1)
                     end_date = datetime.date.today()
+                if range != 'date_range':
+                    print('start_date: ', start_date)
+                    print('end_date: ', end_date)
+                    fstart_date = start_date.strftime('%d/%m/%Y')
+                    fend_date = end_date.strftime('%d/%m/%Y')
                 if range == 'date_range':
                     start_date = serializer.validated_data['start_date_range']
+                    fstart_date = datetime.datetime.strptime(start_date, '%d/%m/%Y').date()
+                    start_date = fstart_date.strftime("%Y-%m-%d")
                     end_date = serializer.validated_data['end_date_range']
+                    fend_date = datetime.datetime.strptime(end_date, '%d/%m/%Y').date()
+                    end_date = fend_date.strftime("%Y-%m-%d")
+                    
                 if vehicle == 'all' and start_date and end_date and report == 'summary':
                     vehicle_data = Vehicle.objects.all()
                     summary = []
                     count = 1
                     for record in vehicle_data:
-                        ride = RideTable.objects.filter(vehicle_id=record)
+                        ride = RideTable.objects.filter(vehicle_id=record, start_date__gte=start_date, start_date__lte=end_date)
                         total_running_time = ride.aggregate(Sum('total_running_time'))
                         total_pause_time = ride.aggregate(Sum('total_pause_time'))
-                        total_time = total_pause_time.get('total_pause_time__sum') if total_pause_time.get('total_pause_time__sum') else 0 + total_running_time.get('total_running_time__sum')
+                        total_time = total_pause_time.get('total_pause_time__sum') if total_pause_time.get('total_pause_time__sum') else 0 + total_running_time.get('total_running_time__sum') if total_running_time.get('total_running_time__sum') else 0
                         delta = datetime.timedelta(seconds=total_time)
                         h, m, s = str(delta).split(':')
                         vehicle_record = {
                             'sr.no': count,
                             'vin': record.vehicle_unique_identifier,
-                            'start_date': start_date.strftime('%d/%m/%Y'),
-                            'end_date': end_date.strftime('%d/%m/%Y'),
+                            'start_date': fstart_date,
+                            'end_date': fend_date,
                             'total_distance': 0.00,
                             'moving_duration': f'{h}h {m}m {s}s',
                             'idle_duration': '0h 0m 00s',
@@ -220,18 +230,18 @@ class GetReportingDataView(APIView):
                         summary = []
                         count = 1
                         for record in vehicle_data:
-                            ride = RideTable.objects.filter(vehicle_id=record)
+                            ride = RideTable.objects.filter(vehicle_id=record, start_date__gte=start_date, start_date__lte=end_date)
                             total_running_time = ride.aggregate(Sum('total_running_time'))
                             total_pause_time = ride.aggregate(Sum('total_pause_time'))
                             total_time = total_pause_time.get('total_pause_time__sum') if total_pause_time.get(
-                                'total_pause_time__sum') else 0 + total_running_time.get('total_running_time__sum')
+                                'total_pause_time__sum') else 0 + total_running_time.get('total_running_time__sum') if total_running_time.get('total_running_time__sum') else 0
                             delta = datetime.timedelta(seconds=total_time)
                             h, m, s = str(delta).split(':')
                             vehicle_record = {
                                 'sr.no': count,
                                 'vin': record.vehicle_unique_identifier,
-                                'start_date': start_date.strftime('%d/%m/%Y'),
-                                'end_date': end_date.strftime('%d/%m/%Y'),
+                                'start_date': start_date,
+                                'end_date': end_date,
                                 'total_distance': 0.00,
                                 'moving_duration': f'{h}h {m}m {s}s',
                                 'idle_duration': '0h 0m 00s',
@@ -249,13 +259,18 @@ class GetReportingDataView(APIView):
                             'data': summary if len(summary) >= 1 else 'No Vehicle found'
                         }, status=status.HTTP_200_OK)
                     if report == 'trips':
+                        if not vehicle_data:
+                            return Response({
+                            'status': 200,
+                            'data': 'No Trips found for this vehicle'
+                        }, status=status.HTTP_200_OK)
                         trips_data = RideTable.objects.filter(vehicle_id=vehicle_data.values()[0].get('id'))
                         rides = []
                         count = 1
                         for record in trips_data:
                             total_running_time = record.total_running_time
                             total_pause_time = record.total_pause_time
-                            total_time = int(total_pause_time) if total_pause_time else 0 + int(total_running_time)
+                            total_time = int(total_pause_time) if total_pause_time else 0 + int(total_running_time) if total_running_time.get('total_running_time__sum') else 0
                             delta = datetime.timedelta(seconds=total_time)
                             h, m, s = str(delta).split(':')
                             rides.append({
@@ -290,7 +305,6 @@ class GetReportingDataView(APIView):
                         'data': 'something went wrong'
                     }, status=status.HTTP_400_BAD_REQUEST)
             except Exception as e:
-                print('e: ', e)
                 return Response({
                     'status': 400,
                     'data': str(e)

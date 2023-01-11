@@ -265,7 +265,7 @@ class UserRideDetailsSerializer(serializers.ModelSerializer):
 
   class Meta:
     model = RideTable
-    fields = ['id', 'ride_date', 'start_location', 'end_location', 'start_time', 'end_time', 'vehicle_id']
+    fields = ['id', 'ride_date', 'start_time', 'end_time', 'vehicle_id']
 
   def get_ride_date(self, obj):
     date = obj.ride_date.strftime('%A, %d %b %Y')

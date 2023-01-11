@@ -29,7 +29,7 @@ from elekgo_app.authentication import JWTAuthentication, create_access_token, cr
 from elekgo_app.user_permissions import IsAdminUser
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.sessions.backends.db import SessionStore
-from elekgo_app.utils import send_notification, update_or_create_vehicle_data, restructuring_all_vehicles, get_vehicle_location, calculate_ride_distance, carbon_calculation, geocoder_reverse, get_vehicle_detials
+from elekgo_app.utils import send_notification, update_or_create_vehicle_data, restructuring_all_vehicles, get_vehicle_location, calculate_ride_distance, carbon_calculation, geocoder_reverse, get_vehicle_detials, geocode_reverse_coordinate
 import environ
 from rest_framework.decorators import action
 from elekgo_app.pagination import CustomPagination
@@ -653,13 +653,14 @@ class RideStartStopSerializerView(APIView):
                             
                     unlock_data = unlock_scooter(user.bolt_token, scooter.vehicle_unique_identifier)
                     scooter_coordinate = get_vehicle_location(scooter.vehicle_unique_identifier, user.id)
+                    scooter_address = scooter.vehicle_station.address if scooter.vehicle_station else geocode_reverse_coordinate(scooter_coordinate)
                     if unlock_data.status_code == 200:
                         scooter.vehicle_station = None
                         scooter.is_reserved = False
                         scooter.is_unlocked = True
-                        scooter.save()
-                        ride = RideTable(riding_user_id=user, vehicle_id=scooter, start_time=current_time, start_date=current_date, is_ride_running=True, start_location=scooter_coordinate)
+                        ride = RideTable(riding_user_id=user, vehicle_id=scooter, start_time=current_time, start_date=current_date, is_ride_running=True, start_location=scooter_address)
                         ride.save()
+                        scooter.save()
                         
                         send_notification(fcm_token=request.user.fcm_token, title="Ride Started", desc="You can start your ride now.", user=request.user)
                         return Response({
@@ -783,7 +784,7 @@ class RideStartStopSerializerView(APIView):
                             ride_obj.is_ride_running = False
                             ride_obj.is_ride_end = True
                             ride_obj.is_paused = False
-                            ride_obj.end_location = get_vehicle_location(scooter.vehicle_unique_identifier, user.id)
+                            ride_obj.end_location = scooter.vehicle_station.address if scooter.vehicle_station else geocode_reverse_coordinate(get_vehicle_location(scooter.vehicle_unique_identifier, user.id))
                             ride_obj.save()
 
                             ride_distance = calculate_ride_distance(ride_obj.start_location, ride_obj.end_location)
@@ -1519,6 +1520,18 @@ class GetAvailableVehicles(ViewSet):
                     "longitude": key.long,
                 })
             return Response({'station_data': all_data }, status=status.HTTP_200_OK)
+        except Exception as E:
+            print('E: ', str(E))
+            return Response({"message":"Something went wrong", 'Exception': str(E)}, status=status.HTTP_400_BAD_REQUEST)
+    
+    def retrieve(self, request, pk=None):
+        try:
+            user_id = request.user.id
+            update_or_create_vehicle_data(user_id)
+            station_obj = Station.objects.filter(pk=pk).first()
+            scooter = station_obj.station_object.filter(vehicle_station=station_obj.id)
+            serializer = StationVehicleSerializer(scooter, many=True)
+            return Response({'vehicle_data': serializer.data }, status=status.HTTP_200_OK)
         except Exception as E:
             print('E: ', str(E))
             return Response({"message":"Something went wrong", 'Exception': str(E)}, status=status.HTTP_400_BAD_REQUEST)
