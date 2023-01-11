@@ -20,7 +20,7 @@ from elekgo_app.pagination import CustomPagination
 
 class UserRideHistory(APIView, CustomPagination):
     authentication_classes = [JWTAuthentication]
-    permission_classes= [IsAuthenticated]
+    permission_classes= [IsAdminUser]
     page_size = 20
     page_size_query_param = 'count'
 
@@ -42,7 +42,7 @@ class UserRideHistory(APIView, CustomPagination):
 
 class SetUserPermission(APIView):
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminUser]
 
     def post(self, request, *args, **kwargs):
         serializer = UserPermissionSerializer(data=request.data)
@@ -75,7 +75,7 @@ class SetUserPermission(APIView):
 
 class AssetUnlock(APIView):
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminUser]
 
     def post(self, request, pk, *args, **kwargs):
         try:
@@ -103,7 +103,7 @@ class AssetUnlock(APIView):
 
 class GetAllAssets(APIView, CustomPagination):
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminUser]
 
     def get(self, request, *args, **kwargs):
         try:
@@ -125,7 +125,7 @@ class GetAllAssets(APIView, CustomPagination):
 
 class AssetLock(APIView):
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminUser]
 
     def post(self, request, pk, *args, **kwargs):
         try:
@@ -153,7 +153,7 @@ class AssetLock(APIView):
 
 class GetReportingDataView(APIView):
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminUser]
 
     def post(self, request, *args, **kwargs):
         serializer = ReportDataSerializer(data=request.data)
@@ -290,6 +290,7 @@ class GetReportingDataView(APIView):
                         'data': 'something went wrong'
                     }, status=status.HTTP_400_BAD_REQUEST)
             except Exception as e:
+                print('e: ', e)
                 return Response({
                     'status': 400,
                     'data': str(e)
@@ -302,7 +303,7 @@ class GetReportingDataView(APIView):
 
 class AdminProfileUpdateView(APIView):
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminUser]
 
     def patch(self,request,pk,*args,**kwargs):
         user = User.objects.get(id=pk)
@@ -323,7 +324,7 @@ class AdminProfileUpdateView(APIView):
 class AdminDashboardOverView(ViewSet):
     serializer_class = AdminDashboardOverview
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminUser]
 
     def list(self, request, *args, **kwargs):
         total_amount = PaymentModel.objects.filter(payment_note='Book Ride').aggregate(
