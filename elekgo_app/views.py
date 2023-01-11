@@ -747,7 +747,10 @@ class RideStartStopSerializerView(APIView):
                         if lock_data.status_code == 200:
                             # scooter.vehicle_station = station_obj
                             scooter.is_unlocked = False
+                            scooter.booked_user_id = None
+                            scooter.is_booked = False
                             scooter.save()
+                            
                             delta = 0
                             end = datetime.datetime.strptime(str(current_time), "%H:%M:%S")
                             if len(ride_pause_queryset) == 0:
@@ -872,7 +875,7 @@ class RideStartStopSerializerView(APIView):
                             }, status=status.HTTP_200_OK)
                         return Response({'message': 'something went wrong'}, status=status.HTTP_400_BAD_REQUEST)
                     else:
-                        return Response({'message': 'ride already ended'}, status=status.HTTP_400_BAD_REQUEST)
+                        return Response({'message': 'ride already ended'}, status=status.HTTP_401_UNAUTHORIZED)
                 
             except Exception as e:
                 return Response({'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)
