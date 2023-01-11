@@ -784,10 +784,12 @@ class RideStartStopSerializerView(APIView):
                             ride_obj.is_ride_running = False
                             ride_obj.is_ride_end = True
                             ride_obj.is_paused = False
-                            ride_obj.end_location = scooter.vehicle_station.address if scooter.vehicle_station else geocode_reverse_coordinate(get_vehicle_location(scooter.vehicle_unique_identifier, user.id))
+                            scooter_coordinate = get_vehicle_location(scooter.vehicle_unique_identifier, user.id)
+                            print('scooter_coordinate: ', scooter_coordinate)
+                            ride_obj.end_location = scooter.vehicle_station.address if scooter.vehicle_station else geocode_reverse_coordinate(scooter_coordinate)
                             ride_obj.save()
 
-                            ride_distance = calculate_ride_distance(ride_obj.start_location, ride_obj.end_location)
+                            ride_distance = 0#calculate_ride_distance(ride_obj.start_location, ride_obj.end_location)
                             user.total_km += ride_distance
                             user.save()
                             
@@ -879,6 +881,7 @@ class RideStartStopSerializerView(APIView):
                         return Response({'message': 'ride already ended'}, status=status.HTTP_401_UNAUTHORIZED)
                 
             except Exception as e:
+                print('e: ', e.__traceback__())
                 return Response({'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -1275,25 +1278,28 @@ class UserRideDetails(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, ride_id, *args, **kwargs):
-        ride = RideTable.objects.get(id=ride_id, is_ride_end=True)
-        ride_data = RideTable.objects.filter(id=ride_id, is_ride_end=True)
-        serializer = UserRideDetailsSerializer(ride_data, many=True)
-        trip_statistics = {
-            "per_minute_charges_on_running": 2.5,
-            "total_running_mins": f'{time.strftime("%M:%S", time.gmtime(int(ride.total_running_time)))} Min',
-            "per_minute_charges_on_pause": 0.5,
-            "total_pause_mins": f'{time.strftime("%M:%S", time.gmtime(int(ride.total_pause_time)))} Min' if ride.total_pause_time else '00:00 Min',
-            "total_min_cost": round(ride.running_cost, 2),
-            "total_pause_cost": round(ride.pause_cost, 2),
-            "total_km": ride.ride_km,
-            "gst": '18%',
-            "gst_cost": round(ride.gst_cost, 2),
-            "total_cost": round(ride.total_cost_with_gst, 2),
-        }
-        return Response({
-            "data": serializer.data[0],
-            'invoice_details': trip_statistics
-        })
+        try:
+            ride = RideTable.objects.get(id=ride_id, is_ride_end=True)
+            ride_data = RideTable.objects.filter(id=ride_id, is_ride_end=True)
+            serializer = UserRideDetailsSerializer(ride_data, many=True)
+            trip_statistics = {
+                "per_minute_charges_on_running": 2.5,
+                "total_running_mins": f'{time.strftime("%M:%S", time.gmtime(int(ride.total_running_time)))} Min',
+                "per_minute_charges_on_pause": 0.5,
+                "total_pause_mins": f'{time.strftime("%M:%S", time.gmtime(int(ride.total_pause_time)))} Min' if ride.total_pause_time else '00:00 Min',
+                "total_min_cost": round(ride.running_cost, 2),
+                "total_pause_cost": round(ride.pause_cost, 2),
+                "total_km": ride.ride_km,
+                "gst": '18%',
+                "gst_cost": round(ride.gst_cost, 2),
+                "total_cost": round(ride.total_cost_with_gst, 2),
+            }
+            return Response({
+                "data": serializer.data[0],
+                'invoice_details': trip_statistics
+            })
+        except Exception as e:
+            return Response({'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 def locations_data(pk):

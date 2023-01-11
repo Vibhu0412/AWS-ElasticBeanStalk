@@ -110,11 +110,14 @@ def get_vehicle_detials(vin, user):
 
 def geocode_reverse_coordinate(coordinate):
   try:
-    lat = coordinate[0]
-    long = coordinate[1]
+    lat = float(coordinate[0])
+    long = float(coordinate[1])
     url = f"https://nominatim.openstreetmap.org/reverse?lat={lat}&lon={long}&format=geocodejson&addressdetails=1"
     response = requests.request("GET", url)
-    return response.json()
+    if response.status_code == status.HTTP_200_OK:
+      return response.json()
+    else:
+      return ""
   except Exception as E:
     print('E: ', str(E))
     return None
