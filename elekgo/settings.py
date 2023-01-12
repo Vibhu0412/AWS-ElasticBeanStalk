@@ -96,6 +96,7 @@ TEMPLATES = [
 ]
 
 CORS_ALLOWED_ORIGINS = [
+    "http://13.126.147.93",
     "http://127.0.0.1:8000",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
@@ -111,6 +112,7 @@ CORS_ALLOWED_ORIGINS = [
 
 
 CSRF_TRUSTED_ORIGINS = [
+    "http://13.126.147.93",
     "http://127.0.0.1:8000",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
