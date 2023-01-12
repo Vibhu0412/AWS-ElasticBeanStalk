@@ -45,8 +45,16 @@ environ.Env.read_env()
 # Using Nominatim Api
 geolocator = Nominatim(user_agent="coordinateconverter")
 def get_sec(time_str):
-    h, m, s = time_str.split(':')
-    return int(h) * 3600 + int(m) * 60 + int(s)
+    try:
+        h, m, s = 0, 0, 0
+        if len(time_str.split(", ")) > 1:
+            h, m, s = time_str.split(", ")[1].split(':')
+        else:
+            h, m, s = time_str.split(':')
+        return int(h) * 3600 + int(m) * 60 + int(s)
+    except Exception as e:
+        print('e: ', e)
+        return 0
 
 
 def get_tokens_for_user(user):
@@ -785,7 +793,6 @@ class RideStartStopSerializerView(APIView):
                             ride_obj.is_ride_end = True
                             ride_obj.is_paused = False
                             scooter_coordinate = get_vehicle_location(scooter.vehicle_unique_identifier, user.id)
-                            print('scooter_coordinate: ', scooter_coordinate)
                             ride_obj.end_location = scooter.vehicle_station.address if scooter.vehicle_station else geocode_reverse_coordinate(scooter_coordinate)
                             ride_obj.save()
 
