@@ -389,9 +389,19 @@ class StationSerializer(serializers.ModelSerializer):
     fields = "__all__"
 
 class UserSerializer(serializers.ModelSerializer):
+  total_carbon_saved = serializers.SerializerMethodField()
   class Meta:
     model = User
     exclude = ["password", "is_email_verified", "otp", "bolt_id", "bolt_token", "fcm_token"]
+    
+  def get_total_carbon_saved(self, obj):
+    total_carbon_saved = round(obj.total_carbon_saved, 2)
+    if total_carbon_saved >= 1000:
+      total_carbon_saved = total_carbon_saved/1000
+      total_carbon_saved = f"{total_carbon_saved} Kg"
+    else:
+      total_carbon_saved = f"{total_carbon_saved} g"
+    return total_carbon_saved
 
 class StationVehicleSerializer(serializers.ModelSerializer):
   class Meta:
