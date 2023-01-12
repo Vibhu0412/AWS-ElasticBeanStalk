@@ -4,7 +4,7 @@ from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .serializers import AllRideSerialzer, UserPermissionSerializer, ReportDataSerializer, AdminDashboardOverview,\
-    AdminProfiileUpdateSerializer, AssetsViewSerializer
+    AdminProfiileUpdateSerializer, AssetsViewSerializer, VehicleSerializer
 from elekgo_app.models import RideTable, User, Vehicle, PaymentModel
 from rest_framework import status
 from elekgo_app.authentication import JWTAuthentication
@@ -13,7 +13,7 @@ from elekgo_app.user_permissions import IsAdminUser, IsCustomeSupport, IsMainten
 from rest_framework.pagination import LimitOffsetPagination
 from elekgo_app.views import unlock_scooter, lock_scooter
 from django.db.models import Sum
-from rest_framework.viewsets import ViewSet
+from rest_framework.viewsets import ViewSet, ModelViewSet
 from django.db.models.functions import Abs
 from elekgo_app.pagination import CustomPagination
 
@@ -121,6 +121,13 @@ class GetAllAssets(APIView, CustomPagination):
                 'status': 400,
                 'data': str(e)
             }, status=status.HTTP_400_BAD_REQUEST)
+
+
+class VehicleAdminApi(ModelViewSet):
+    queryset = Vehicle.objects.all()
+    serializer_class = VehicleSerializer
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAdminUser]
 
 
 class AssetLock(APIView):

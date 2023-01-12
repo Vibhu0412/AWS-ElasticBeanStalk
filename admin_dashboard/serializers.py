@@ -46,8 +46,8 @@ class TripInfoSerializer(serializers.ModelSerializer):
 
 class VehicleSerializer(serializers.ModelSerializer):
   class Meta:
-    model = RideTable
-    field = '__all__'
+    model = Vehicle
+    fields = '__all__'
 
 
 class AllRideSerialzer(serializers.ModelSerializer):
