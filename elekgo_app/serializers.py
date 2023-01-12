@@ -397,7 +397,7 @@ class UserSerializer(serializers.ModelSerializer):
   def get_total_carbon_saved(self, obj):
     total_carbon_saved = round(obj.total_carbon_saved, 2)
     if total_carbon_saved >= 1000:
-      total_carbon_saved = total_carbon_saved/1000
+      total_carbon_saved = round(total_carbon_saved/1000, 2)
       total_carbon_saved = f"{total_carbon_saved} Kg"
     else:
       total_carbon_saved = f"{total_carbon_saved} g"
