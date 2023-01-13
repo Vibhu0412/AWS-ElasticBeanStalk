@@ -1734,12 +1734,12 @@ class VoucherApi(ModelViewSet):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAdminUser]
 
-# class RedeemVoucherApi(ViewSet):
-#     def create(self, request):
-#         serializer = RedeemVoucherSerializer(data=request.data)
-#         if serializer.is_valid():
-#             return Response(serializer.data)
-#         Response({'message': "Voucher not found"}, status=status.HTTP_400_BAD_REQUEST)
+class RedeemVoucherApi(ViewSet):
+    def create(self, request):
+        serializer = RedeemVoucherSerializer(data=request.data)
+        if serializer.is_valid():
+            return Response(serializer.data)
+        Response({'message': "Voucher not found"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 

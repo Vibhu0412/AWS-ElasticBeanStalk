@@ -412,3 +412,9 @@ class VoucherSerializer(serializers.ModelSerializer):
   class Meta:
     model = Voucher
     fields = "__all__"
+    
+class RedeemVoucherSerializer(serializers.ModelSerializer):
+  class Meta:
+    model = Voucher
+    fields = "__all__"
+    read_only_fields = ["amount", "is_active", "is_used", "used_by"]
