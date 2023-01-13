@@ -336,7 +336,4 @@ class Voucher(models.Model):
             instance.code = (id_string + random_str)[-8:]
             instance.save()
 
-    def __str__(self):
-        return "%s" % (self.code,)
-
 post_save.connect(Voucher.post_create, sender=Voucher)

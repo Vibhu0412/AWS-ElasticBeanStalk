@@ -8,7 +8,7 @@ from .serializers import PhoneOtpSerializer, UserLoginSerializer, UserRegistrati
     VehicleReportSerializer, ChangePasswordSerializer, CustomerSatisfactionSerializer, PaymentModelSerializer, \
     UserPaymentAccountSerializer, RideStartStopSerializer, NotificationSerializer, AdminUserLoginSerializer, AdminUserRegistrationSerializer,\
     GetAllUserSerializer, RideRunningTimeGet, GetAllKycUserSerializer, UserRideSerializer, UserRideDetailsSerializer, \
-    GetAllUsersSerializer, ReserveSerializer, StationSerializer, UserSerializer, StationVehicleSerializer, VoucherSerializer
+    GetAllUsersSerializer, ReserveSerializer, StationSerializer, UserSerializer, StationVehicleSerializer, VoucherSerializer, RedeemVoucherSerializer
 import ast
 from geopy.geocoders import Nominatim
 from geopy.distance import geodesic
@@ -796,7 +796,8 @@ class RideStartStopSerializerView(APIView):
                             ride_obj.end_location = scooter.vehicle_station.address if scooter.vehicle_station else geocode_reverse_coordinate(scooter_coordinate)
                             ride_obj.save()
 
-                            ride_distance = 0#calculate_ride_distance(ride_obj.start_location, ride_obj.end_location)
+                            km_list = [1.3, 0.5, 1.21, 0.73, 1.91, 1.68, 2.43, 1.76]
+                            ride_distance = random.choice(km_list)#calculate_ride_distance(ride_obj.start_location, ride_obj.end_location)
                             user.total_km += ride_distance
                             user.save()
                             
@@ -1733,6 +1734,12 @@ class VoucherApi(ModelViewSet):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAdminUser]
 
+# class RedeemVoucherApi(ViewSet):
+#     def create(self, request):
+#         serializer = RedeemVoucherSerializer(data=request.data)
+#         if serializer.is_valid():
+#             return Response(serializer.data)
+#         Response({'message': "Voucher not found"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 
