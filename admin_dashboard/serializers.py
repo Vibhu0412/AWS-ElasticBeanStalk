@@ -174,6 +174,6 @@ class AdminDashboardOverview(serializers.ModelSerializer):
 
 
 class AssetsViewSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Vehicle
-        fields = ['vehicle_unique_identifier', 'is_unlocked']
+  class Meta:
+      model = Vehicle
+      fields = ['vehicle_unique_identifier', 'is_unlocked']

@@ -231,7 +231,9 @@ class UserLoginWithEmail(APIView):
                                 "user_email": user.email,
                                 "is_kyc_verified": user.is_user_kyc_verified,
                                 "token": token,
-                                "bolt_token": user.bolt_token #user_auth_token
+                                "bolt_token": user.bolt_token, #user_auth_token
+                                # "bearer_token": data.,
+                                # "token": ,
                             }
                             user.bolt_token = user.bolt_token#user_auth_token
                             user.fcm_token=fcm_token
@@ -1153,7 +1155,7 @@ class GetCurrentRideTime(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class GetAllKycUsers(APIView):
+class GetAllKycUsers(APIView, CustomPagination):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
@@ -1735,6 +1737,8 @@ class VoucherApi(ModelViewSet):
     permission_classes = [IsAdminUser]
 
 class RedeemVoucherApi(ViewSet):
+    authentication_classes = [JWTAuthentication]
+    
     def create(self, request):
         serializer = RedeemVoucherSerializer(data=request.data)
         if serializer.is_valid():

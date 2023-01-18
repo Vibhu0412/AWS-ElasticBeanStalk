@@ -21,7 +21,7 @@ from elekgo_app.pagination import CustomPagination
 class UserRideHistory(APIView, CustomPagination):
     authentication_classes = [JWTAuthentication]
     permission_classes= [IsAdminUser]
-    page_size = 20
+    page_size = 10
     page_size_query_param = 'count'
 
     def get(self, request, *args, **kwargs):
@@ -30,10 +30,10 @@ class UserRideHistory(APIView, CustomPagination):
         results = self.paginate(page=page, request=request, queryset=ride_details, view=self)
         serializer = AllRideSerialzer(results,many=True)
         return Response({
-            'next_limit': self.limit + 20,
-            'next_offset': self.offset + 20,
-            'previous_limit': self.limit - 20,
-            'previous_offset': self.offset - 20,
+            'next_limit': self.limit + 10,
+            'next_offset': self.offset + 10,
+            'previous_limit': self.limit - 10,
+            'previous_offset': self.offset - 10,
             "total_rides": ride_details.count(),
             "status": status.HTTP_200_OK,
             "data": serializer.data
