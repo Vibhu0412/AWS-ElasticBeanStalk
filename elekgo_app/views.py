@@ -33,6 +33,7 @@ from elekgo_app.utils import send_notification, update_or_create_vehicle_data, r
 import environ
 from rest_framework.decorators import action
 from elekgo_app.pagination import CustomPagination
+from elekgo_app.filters import SearchFilter, StatusFilter
 from elekgo_app.tasks import countdown_timer, geocoder_reverse
 from elekgo.celery import app
 import math
@@ -1107,13 +1108,16 @@ class AdminUserLogin(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class GetAllAdminUsers(APIView, CustomPagination):
+class GetAllAdminUsers(APIView, CustomPagination, SearchFilter):
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminUser]
+    search_fields = ["user_name", "phone", "email"]
+    
     def get(self,request,*args,**kwargs):
-        user = User.objects.all().exclude(user_role=5)
-        page = request.query_params.get("page")
-        results = self.paginate(page=page, request=request, queryset=user, view=self)
+        user = self.filter_queryset(request=request, model=User, view=self.__class__).exclude(user_role=5)
+        page = request.query_params.get("page") if request.query_params.get("page") else 1
+        limit = request.query_params.get("limit") if request.query_params.get("limit") else 10
+        results = self.paginate(page=page, request=request, limit=limit, queryset=user, view=self)
         data = GetAllUserSerializer(results,many=True)
         return Response({
             "data":data.data
@@ -1155,17 +1159,21 @@ class GetCurrentRideTime(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class GetAllKycUsers(APIView, CustomPagination):
+class GetAllKycUsers(APIView, CustomPagination, SearchFilter, StatusFilter):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
+    search_fields = ["user_name", "phone", "email"]
 
     def get(self, request, *args, **kwargs):
-        user = User.objects.all().exclude(is_user_kyc_verified='NA').filter(user_role=5)
+        user = super().filter_queryset(request=request, model=User, view=self.__class__).exclude(is_user_kyc_verified='NA').filter(user_role=5)
+        # status = request.query_params.get("status") if request.query_params.get("status") else None
+        # user = StatusFilter.filter_queryset(request=request, queryset=user, view=self.__class__, status=status)
         get_pending_user_count = user.filter(is_user_kyc_verified='Pending').count()
         get_rejected_user_count = user.filter(is_user_kyc_verified='Rejected').count()
         get_approved_user_count = user.filter(is_user_kyc_verified='Approved').count()
-        page = request.query_params.get("page")
-        results = self.paginate(page=page, request=request, queryset=user, view=self)
+        page = request.query_params.get("page") if request.query_params.get("page") else 1
+        limit = request.query_params.get("limit") if request.query_params.get("limit") else 10
+        results = self.paginate(page=page, request=request, limit=limit, queryset=user, view=self)
         data = GetAllKycUserSerializer(results, many=True)
         return Response({
             'total_user_count': user.count(),
@@ -1631,17 +1639,19 @@ class GetAvailableVehicles(ViewSet):
             return Response(response_data, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-class GetAllUsersData(APIView, CustomPagination):
+class GetAllUsersData(APIView, CustomPagination, SearchFilter):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
     page_size = 10
     page_size_query_param = 'count'
+    search_fields = ["user_name", "phone", "email"]
 
     def get(self, request):
         user = User.objects.filter(user_role=5).count()
-        users_list = User.objects.filter(user_role=5)
+        users_list = self.filter_queryset(request=request, model=User, view=self.__class__).filter(user_role=5)
         page = request.query_params.get("page") if request.query_params.get("page") else 1
-        results = self.paginate(page=page, request=request, queryset=users_list, view=self)
+        limit = request.query_params.get("limit") if request.query_params.get("limit") else 10
+        results = self.paginate(page=page, request=request, limit=limit, queryset=users_list, view=self)
         serializer = GetAllUsersSerializer(results, many=True)
         return Response({
             'Total_Users': user,

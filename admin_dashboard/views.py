@@ -16,18 +16,20 @@ from django.db.models import Sum
 from rest_framework.viewsets import ViewSet, ModelViewSet
 from django.db.models.functions import Abs
 from elekgo_app.pagination import CustomPagination
+from elekgo_app.filters import SearchFilter
 
-
-class UserRideHistory(APIView, CustomPagination):
+class UserRideHistory(APIView, CustomPagination, SearchFilter):
     authentication_classes = [JWTAuthentication]
     permission_classes= [IsAdminUser]
     page_size = 10
     page_size_query_param = 'count'
+    search_fields = ["vehicle_id__vehicle_unique_identifier"]
 
     def get(self, request, *args, **kwargs):
-        ride_details = RideTable.objects.all()
+        ride_details = self.filter_queryset(request=request, model=RideTable, view=self.__class__)#RideTable.objects.all()
         page = request.query_params.get("page") if request.query_params.get("page") else 1
-        results = self.paginate(page=page, request=request, queryset=ride_details, view=self)
+        limit = request.query_params.get("limit") if request.query_params.get("limit") else 10
+        results = self.paginate(page=page, request=request, limit=limit, queryset=ride_details, view=self)
         serializer = AllRideSerialzer(results,many=True)
         return Response({
             'next_limit': self.limit + 10,
