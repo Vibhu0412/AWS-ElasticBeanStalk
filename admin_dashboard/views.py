@@ -108,8 +108,9 @@ class GetAllAssets(APIView, CustomPagination):
     def get(self, request, *args, **kwargs):
         try:
             vehicle = Vehicle.objects.all()
-            page = request.query_params.get("page")
-            results = self.paginate(page=page, request=request, queryset=vehicle, view=self)
+            # page = request.query_params.get("page")
+            # results = self.paginate(page=page, request=request, queryset=vehicle, view=self)
+            results = vehicle
             serializer = AssetsViewSerializer(results, many=True)
             return Response({
                 'total_assets': vehicle.count(),

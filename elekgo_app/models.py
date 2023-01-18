@@ -323,7 +323,7 @@ class Voucher(models.Model):
     is_active = models.BooleanField(default=True)
     is_used = models.BooleanField(_("Is voucher Used"), default=False)
     used_by = models.ForeignKey(User, verbose_name=_("Voucher used by user"), on_delete=models.CASCADE, null=True, blank=True)
-        
+    
     def __str__(self):
         return "%s" % (self.code,)
 
@@ -334,6 +334,7 @@ class Voucher(models.Model):
             upper_alpha = "ABCDEFGHJKLMNPQRSTVWXYZ1234567890"
             random_str = "".join(secrets.choice(upper_alpha) for i in range(8))
             instance.code = (id_string + random_str)[-8:]
+            instance.is_active = True
             instance.save()
 
 post_save.connect(Voucher.post_create, sender=Voucher)

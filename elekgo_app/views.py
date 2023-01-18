@@ -1740,10 +1740,20 @@ class RedeemVoucherApi(ViewSet):
     authentication_classes = [JWTAuthentication]
     
     def create(self, request):
-        serializer = RedeemVoucherSerializer(data=request.data)
-        if serializer.is_valid():
-            return Response(serializer.data)
-        Response({'message': "Voucher not found"}, status=status.HTTP_400_BAD_REQUEST)
+        code = request.data.get("code")
+        
+        try: 
+            voucher_obj = Voucher.objects.get(code=code, is_active=True, is_used=False)
+        except: 
+            return Response({'message': "Voucher not found"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        voucher_obj.is_used = True
+        voucher_obj.used_by = request.user
+        voucher_obj.save()
+        
+        serializer = RedeemVoucherSerializer(voucher_obj)
+        response = {"message":f"{voucher_obj.amount} amount will be transferred to your wallet", "data":serializer.data}
+        return Response(response, status=status.HTTP_200_OK )
 
 
 
