@@ -32,10 +32,6 @@ class UserRideHistory(APIView, CustomPagination, SearchFilter):
         results = self.paginate(page=page, request=request, limit=limit, queryset=ride_details, view=self)
         serializer = AllRideSerialzer(results,many=True)
         return Response({
-            'next_limit': self.limit + 10,
-            'next_offset': self.offset + 10,
-            'previous_limit': self.limit - 10,
-            'previous_offset': self.offset - 10,
             "total_rides": ride_details.count(),
             "status": status.HTTP_200_OK,
             "data": serializer.data

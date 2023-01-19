@@ -12,7 +12,7 @@ class CustomPagination(LimitOffsetPagination):
                 return None
 
             self.count = self.get_count(queryset)
-            self.offset = self.limit - 10
+            self.offset = self.limit - int(limit)
             self.request = request
             if self.count > self.limit and self.template is not None:
                 self.display_page_controls = True

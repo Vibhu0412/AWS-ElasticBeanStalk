@@ -1655,10 +1655,6 @@ class GetAllUsersData(APIView, CustomPagination, SearchFilter):
         serializer = GetAllUsersSerializer(results, many=True)
         return Response({
             'Total_Users': user,
-            'next_limit': self.limit,
-            'next_offset': self.offset,
-            'previous_limit': self.limit,
-            'previous_offset': self.offset,
             'Users_details': serializer.data
         })
 
