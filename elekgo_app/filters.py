@@ -2,7 +2,7 @@ from rest_framework import filters
 from rest_framework.settings import api_settings
 
 class SearchFilter(filters.SearchFilter):
-    def filter_queryset(self, request, view, model, status):
+    def filter_queryset(self, request, view, model, status=None):
         queryset = model.objects.all()
         if status is not None:
             if type(status) == bool:
