@@ -1,9 +1,11 @@
+import time
 from rest_framework import serializers
 from elekgo_app.models import User, VehicleReportModel, CustomerSatisfaction, PaymentModel, UserPaymentAccount, \
   NotificationModel, RideTable
 from time import strftime, gmtime
 import datetime
 from elekgo_app.models import Vehicle
+from django.db.models import Sum
 
 
 
@@ -177,3 +179,46 @@ class AssetsViewSerializer(serializers.ModelSerializer):
   class Meta:
       model = Vehicle
       fields = ['vehicle_unique_identifier', 'is_unlocked']
+
+
+class UserDetailRideSerializer(serializers.ModelSerializer):
+  duration = serializers.SerializerMethodField()
+  vin = serializers.CharField(source="vehicle_id.vehicle_unique_identifier")
+  start = serializers.SerializerMethodField()
+  class Meta:
+    model = RideTable
+    fields = ["vin", "start", "duration", "total_cost_with_gst", "ride_km"]
+    
+  def get_duration(self, obj):
+    duration = round((obj.total_running_time + obj.total_pause_time), 2) if obj else None
+    duration = time.strftime('%H:%M:%S', time.gmtime(duration))
+    return duration
+  
+  def get_start(self, obj):
+    start = str(obj.ride_date) + " " + str(obj.start_time)
+    return start
+
+
+class UserDetailSerializer(serializers.ModelSerializer):
+  total_duration = serializers.SerializerMethodField()
+  total_km = serializers.SerializerMethodField()
+  total_booking = serializers.SerializerMethodField()
+    
+  class Meta:
+    model = User
+    fields = ["total_duration", "total_km", "total_booking"]
+    
+  def get_total_duration(self, obj):
+    total_running_time_sum = obj.ride_user.aggregate(Sum('total_running_time'))["total_running_time__sum"]
+    total_pause_time_sum = obj.ride_user.aggregate(Sum('total_pause_time'))["total_pause_time__sum"]
+    duration = (total_running_time_sum + total_pause_time_sum) if total_running_time_sum or total_pause_time_sum else None
+    duration = time.strftime('%H:%M:%S', time.gmtime(duration))
+    return duration
+  
+  def get_total_km(self, obj):
+    ride_km_sum = round(obj.ride_user.aggregate(Sum('ride_km'))["ride_km__sum"], 2)
+    return ride_km_sum
+  
+  def get_total_booking(self, obj):
+    count = len(obj.ride_user.all())
+    return count

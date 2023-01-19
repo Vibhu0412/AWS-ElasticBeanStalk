@@ -4,7 +4,7 @@ from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .serializers import AllRideSerialzer, UserPermissionSerializer, ReportDataSerializer, AdminDashboardOverview,\
-    AdminProfiileUpdateSerializer, AssetsViewSerializer, VehicleSerializer
+    AdminProfiileUpdateSerializer, AssetsViewSerializer, VehicleSerializer, UserDetailSerializer, UserDetailRideSerializer
 from elekgo_app.models import RideTable, User, Vehicle, PaymentModel
 from rest_framework import status
 from elekgo_app.authentication import JWTAuthentication
@@ -371,3 +371,28 @@ class AdminDashboardOverView(ViewSet):
             "status": status.HTTP_200_OK,
             "vehicle": result.data
         }, status=status.HTTP_200_OK)
+
+      
+class UserDetails(ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserDetailSerializer
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAdminUser]
+    
+    def retrieve(self, request, pk, *args, **kwargs):
+        try:
+            user_obj = User.objects.get(pk=pk)
+        except Exception as e:
+            return Response({
+            "status": status.HTTP_400_BAD_REQUEST,
+            "msg":"something wents wrong",
+            "data": e.__str__()
+            }, status=status.HTTP_400_BAD_REQUEST)
+            
+        ride_queryset = RideTable.objects.filter(riding_user_id=user_obj)[0:5]
+        
+        user_serializer = UserDetailSerializer(user_obj)
+        ride_serializer = UserDetailRideSerializer(ride_queryset, many=True)
+        
+        response = {"data":user_serializer.data, "recent_ride": ride_serializer.data}
+        return Response(response, status=status.HTTP_200_OK)

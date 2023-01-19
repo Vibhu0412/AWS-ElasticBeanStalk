@@ -1739,11 +1739,13 @@ class StationApi(ModelViewSet):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAdminUser]
 
+
 class VoucherApi(ModelViewSet):
     queryset = Voucher.objects.all()
     serializer_class = VoucherSerializer
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAdminUser]
+
 
 class RedeemVoucherApi(ViewSet):
     authentication_classes = [JWTAuthentication]

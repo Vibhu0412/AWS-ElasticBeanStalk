@@ -7,7 +7,7 @@ from rest_framework.routers import DefaultRouter
 router = DefaultRouter()
 router.register(r"overview",views.AdminDashboardOverView , basename="users")
 router.register("vehicle",views.VehicleAdminApi , basename="vehicle")
-
+router.register("user", views.UserDetails, basename="user")
 
 urlpatterns = [
    
