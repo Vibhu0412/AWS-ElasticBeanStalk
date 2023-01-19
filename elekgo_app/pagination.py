@@ -7,7 +7,7 @@ class CustomPagination(LimitOffsetPagination):
                 queryset = queryset.order_by("-created_at")
             except Exception as E:
                 print('E: ', E)
-            self.limit = limit * int(page)
+            self.limit = int(limit) * int(page)
             if self.limit is None:
                 return None
 
