@@ -33,7 +33,7 @@ from elekgo_app.utils import send_notification, update_or_create_vehicle_data, r
 import environ
 from rest_framework.decorators import action
 from elekgo_app.pagination import CustomPagination
-from elekgo_app.filters import SearchFilter, StatusFilter
+from elekgo_app.filters import SearchFilter
 from elekgo_app.tasks import countdown_timer, geocoder_reverse
 from elekgo.celery import app
 import math
@@ -1159,15 +1159,14 @@ class GetCurrentRideTime(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class GetAllKycUsers(APIView, CustomPagination, SearchFilter, StatusFilter):
+class GetAllKycUsers(APIView, CustomPagination, SearchFilter):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
     search_fields = ["user_name", "phone", "email"]
 
     def get(self, request, *args, **kwargs):
-        user = super().filter_queryset(request=request, model=User, view=self.__class__).exclude(is_user_kyc_verified='NA').filter(user_role=5)
-        # status = request.query_params.get("status") if request.query_params.get("status") else None
-        # user = StatusFilter.filter_queryset(request=request, queryset=user, view=self.__class__, status=status)
+        kyc_status = request.query_params.get("status") if request.query_params.get("status") else None
+        user = super().filter_queryset(request=request, model=User, view=self.__class__, status=kyc_status).exclude(is_user_kyc_verified='NA').filter(user_role=5)
         get_pending_user_count = user.filter(is_user_kyc_verified='Pending').count()
         get_rejected_user_count = user.filter(is_user_kyc_verified='Rejected').count()
         get_approved_user_count = user.filter(is_user_kyc_verified='Approved').count()
@@ -1648,7 +1647,11 @@ class GetAllUsersData(APIView, CustomPagination, SearchFilter):
 
     def get(self, request):
         user = User.objects.filter(user_role=5).count()
-        users_list = self.filter_queryset(request=request, model=User, view=self.__class__).filter(user_role=5)
+        try:
+            user_status = bool(int(request.query_params.get("status"))) if request.query_params.get("status") else None
+        except:
+            user_status = None
+        users_list = self.filter_queryset(request=request, model=User, view=self.__class__, status=user_status).filter(user_role=5)
         page = request.query_params.get("page") if request.query_params.get("page") else 1
         limit = request.query_params.get("limit") if request.query_params.get("limit") else 10
         results = self.paginate(page=page, request=request, limit=limit, queryset=users_list, view=self)
