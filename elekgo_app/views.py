@@ -36,6 +36,7 @@ from elekgo_app.pagination import CustomPagination
 from elekgo_app.filters import SearchFilter
 from elekgo_app.tasks import countdown_timer, geocoder_reverse
 from elekgo.celery import app
+from rest_framework import filters
 import math
 from dotenv import load_dotenv
 load_dotenv()
@@ -1761,11 +1762,39 @@ class StationApi(ModelViewSet):
     permission_classes = [IsAdminUser]
 
 
-class VoucherApi(ModelViewSet):
+class VoucherApi(ModelViewSet, CustomPagination):
     queryset = Voucher.objects.all()
     serializer_class = VoucherSerializer
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAdminUser]
+    filter_backends = [filters.SearchFilter]
+    search_fields = ["code", "amount"]
+    
+    def list(self, request, *args, **kwargs):
+        voucher = Voucher.objects.all().count()
+        try:
+            voucher_status = bool(int(request.query_params.get("status"))) if request.query_params.get("status") else None
+        except:
+            voucher_status = None
+        try:
+            used_status = bool(int(request.query_params.get("is_used"))) if request.query_params.get("is_used") else None
+        except:
+            used_status = None
+        queryset = Voucher.objects.all()
+        voucher_list = self.filter_queryset(queryset=queryset)
+        if voucher_status:
+            voucher_list = voucher_list.filter(is_active=voucher_status)
+        if used_status:
+            voucher_list = voucher_list.filter(is_used=used_status)
+        page = request.query_params.get("page") if request.query_params.get("page") else 1
+        limit = request.query_params.get("limit") if request.query_params.get("limit") else 10
+        results = super().paginate(page=page, request=request, limit=limit, queryset=voucher_list, view=self)
+        serializer = VoucherSerializer(results, many=True)
+        return Response({
+            'Total_Users': voucher,
+            'Users_details': serializer.data
+        })
+        return super().list(request, *args, **kwargs)
 
 
 class RedeemVoucherApi(ViewSet):
