@@ -1792,7 +1792,7 @@ class VoucherApi(ModelViewSet, CustomPagination):
         serializer = VoucherSerializer(results, many=True)
         return Response({
             'Total_Users': voucher,
-            'Users_details': serializer.data
+            'results': serializer.data
         })
         return super().list(request, *args, **kwargs)
 
