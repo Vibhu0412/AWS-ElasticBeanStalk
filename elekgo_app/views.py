@@ -1791,9 +1791,10 @@ class VoucherApi(ModelViewSet, CustomPagination):
         results = super().paginate(page=page, request=request, limit=limit, queryset=voucher_list, view=self)
         serializer = VoucherSerializer(results, many=True)
         return Response({
-            'Total_Users': voucher,
-            'results': serializer.data
-        })
+            'total_vouchers': voucher,
+            'results': serializer.data,
+            "status": status.HTTP_200_OK,
+        }, status=status.HTTP_200_OK)
         return super().list(request, *args, **kwargs)
 
 
