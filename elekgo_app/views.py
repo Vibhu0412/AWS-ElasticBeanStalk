@@ -421,7 +421,7 @@ class UserKycVerificationSerializerView(APIView):
             try:
                 user = User.objects.get(id=user_id)
                 if user:
-                    if user.is_user_kyc_verified == "NA":
+                    if user.is_user_kyc_verified == "NA" or user.is_user_kyc_verified == "Rejected":
                         user.user_image = user_image
                         user.user_aadhar_image = user_aadhar_image
                         user.user_aadhar_identification_num = user_aadhar_identification_num
@@ -1052,6 +1052,9 @@ class AdminUserRegisterUserView(APIView):
                 "message": "Data not found"
             }, status=status.HTTP_400_BAD_REQUEST)
 
+    def get(self, request, pk):
+        pass
+        
 
 class AdminUserLogin(APIView):
     renderer_classes = [UserRenderer]
