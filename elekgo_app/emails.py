@@ -42,3 +42,9 @@ def send_otp_session_via_email(email):
     email_from = settings.EMAIL_HOST
     send_mail(subject , message , email_from , [email])
     return otp
+
+def send_verification_link(email, link):
+    subject = "Account Verification Email - ElekGo"
+    message = f"Please verify your email - your verification link is {link}"
+    email_from = settings.EMAIL_HOST
+    send_mail(subject , message , email_from , [email])

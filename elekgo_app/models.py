@@ -50,7 +50,7 @@ class AllUserManager(BaseUserManager):
         return super().get_queryset().exclude(is_user_kyc_verified = "Rejected")
 
 class UserManager(BaseUserManager):
-    def create_user(self, email, user_name, phone, user_role=5, password=None, fcm_token=None):
+    def create_user(self, email, user_name, phone, user_role=5, password=None, fcm_token=None, is_email_verified=None):
         if not email:
             raise ValueError('User must have an email address')
         user = self.model(

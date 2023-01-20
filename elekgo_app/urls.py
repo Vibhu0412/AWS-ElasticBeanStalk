@@ -30,6 +30,7 @@ urlpatterns = [
     path('ride_start_stop/', views.RideStartStopSerializerView.as_view(), name='ride-start-stop'),
     path('all_notifications/', views.AllNotifications.as_view(),name="all-notifications"),
     path('create_admin_user/', views.AdminUserRegisterUserView.as_view(),name="create-admin-user"),
+    path('verify_admin_user/', views.AdminVerificationLink.as_view(),name="verify-admin-user"),
     path('admin_user_login/', views.AdminUserLogin.as_view(),name="admin-user-login"),
     path('all_admin_user/',views.GetAllAdminUsers.as_view(),name='all-admin-user'),
     path('get_user_ride_time/', views.GetCurrentRideTime.as_view(), name='user-ride-time'),

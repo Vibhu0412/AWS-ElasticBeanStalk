@@ -65,3 +65,21 @@ def decode_refresh_token(token):
         return payload['user_id']
     except:
         raise exceptions.AuthenticationFailed('Unauthenticated')
+    
+def create_verification_token(id):
+    return jwt.encode({
+        'user_id': id,
+        'exp': datetime.datetime.utcnow() + datetime.timedelta(days=10),
+        'iat': datetime.datetime.utcnow(),
+    }, 'access_secret', algorithm='HS256')
+
+def decode_verification_token(token):
+    try:
+        payload = jwt.decode(token, 'access_secret', algorithms='HS256')
+        return payload['user_id']
+    except:
+        raise exceptions.AuthenticationFailed('Unauthenticated')
+    
+def get_verification_token(user):
+    verification_token = create_verification_token(user.id)
+    return verification_token

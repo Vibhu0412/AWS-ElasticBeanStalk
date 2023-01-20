@@ -25,7 +25,7 @@ from django.contrib.auth.hashers import check_password, make_password
 import datetime
 import requests
 import time
-from elekgo_app.authentication import JWTAuthentication, create_access_token, create_refresh_token, decode_access_token, decode_refresh_token
+from elekgo_app.authentication import JWTAuthentication, create_access_token, create_refresh_token, decode_access_token, decode_refresh_token, get_verification_token, decode_verification_token
 from elekgo_app.user_permissions import IsAdminUser
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.sessions.backends.db import SessionStore
@@ -1008,7 +1008,7 @@ class AdminUserRegisterUserView(APIView):
                     # send_otp_via_email(serializer.validated_data['email'])
                     email = serializer.validated_data['email']
                     user = User.objects.get(email=email)
-                    token = get_tokens_for_user(user)
+                    token = get_verification_token(user)
                     payload = {
                         "firstName": "",
                         "UID": str(user.id),
@@ -1021,40 +1021,58 @@ class AdminUserRegisterUserView(APIView):
                     url = 'https://auth.revos.in/user/register/open'
                     response = requests.request("POST", url, headers=headers, data=payload)
                     data = response.json()
-                    if data.get('status') == 200:
+                    if data.get('status') == status.HTTP_200_OK:
                         bolt_id = data.get('data').get('user').get('_id')
                         bolt_token = data.get('data').get('token')
                         user.bolt_id = bolt_id
                         user.bolt_token = bolt_token
                         user.save()
                         response = {
-                            "status_code": 201,
+                            "status_code": status.HTTP_201_CREATED,
                             'user_id': user.id,
                             "user_name": user.user_name,
                             "user_phone": str(user.phone),
                             "user_email": str(user.email),
-                            "token": token
+                            # "token": token
                         }
+                        link = f"http://{request.get_host()}/verify_admin_user/?token={token}"
+                        send_verification_link(email, link)
                         return Response(response, status=status.HTTP_201_CREATED)
                 response = {
-                    "status_code": 400,
+                    "status_code": status.HTTP_400_BAD_REQUEST,
                     "errors": serializer.errors
                 }
                 return Response(response, status=status.HTTP_400_BAD_REQUEST)
             except Exception as e:
+                print('e: ', e.__traceback__())
                 return Response({
-                    "status_code": 500,
+                    "status_code": status.HTTP_500_INTERNAL_SERVER_ERROR,
                     "message": "Something went wrong"
                 }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         else:
             return Response({
-                "status_code": 400,
+                "status_code": status.HTTP_400_BAD_REQUEST,
                 "message": "Data not found"
             }, status=status.HTTP_400_BAD_REQUEST)
-
-    def get(self, request, pk):
-        pass
         
+
+class AdminVerificationLink(APIView):
+    
+    def get(self, request):
+        token = request.query_params["token"]
+        user_id = decode_verification_token(token)
+        try:
+            user_obj = User.objects.get(pk=user_id)
+        except:
+            return Response({
+                "status_code": status.HTTP_400_BAD_REQUEST,
+                "message": "User not found"
+            }, status=status.HTTP_400_BAD_REQUEST)
+        user_obj.is_email_verified = True
+        user_obj.save()
+        response = {"message": "Email verified successfuly"}
+        return Response(response, status=status.HTTP_200_OK)
+
 
 class AdminUserLogin(APIView):
     renderer_classes = [UserRenderer]

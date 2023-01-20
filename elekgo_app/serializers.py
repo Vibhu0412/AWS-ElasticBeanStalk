@@ -182,6 +182,7 @@ class AdminUserRegistrationSerializer(serializers.ModelSerializer):
     return attrs
 
   def create(self, validate_data):
+    print('validate_data: ', validate_data)
     return User.objects.create_user(**validate_data)
 
 
