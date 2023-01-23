@@ -427,4 +427,3 @@ class AppVersionSerializer(serializers.ModelSerializer):
   class Meta:
     model = AppVersion
     fields = "__all__"
-    read_only_fields = "__all__"
