@@ -71,7 +71,7 @@ def get_vehicle_location(vin, pk):
         coordinate = str(key.get("location").get("latitude"))[0:9] + "," + str(key.get("location").get("longitude"))[0:9]
         return coordinate
   else:
-    raise exceptions.JsonResponse("Bad response from bolt get all vehicle api")
+    return "Bad response from bolt get all vehicle api"
 
 def update_or_create_vehicle_data(pk):
   """Utitlity for getting all vehicles list from bolt api and updating project's database"""
@@ -227,7 +227,18 @@ def carbon_calculation(ride_km):
   ride_carbon_footprint = round(ride_km * carbon_emmision_per_km, 2)
   return ride_carbon_footprint
 
-
+def bolt_login(user):
+  url = "https://auth.revos.in/user/login/open"
+  payload = {"UID": {user.id}}
+  headers = {
+    'token': os.getenv('bolt_app_token'),
+  }
+  response = requests.request("POST", url, headers=headers, data=payload)
+  if response.status_code == status.HTTP_206_PARTIAL_CONTENT or response.status_code == status.HTTP_200_OK:
+    bolt_token = response.json().get("data").get("token") 
+    User.objects.update(bolt_token=bolt_token)
+  else:
+    print('response: ', dir(response), response.json())
 
 
 

@@ -340,10 +340,12 @@ class Voucher(models.Model):
 post_save.connect(Voucher.post_create, sender=Voucher)
 
 class AppVersion(models.Model):
-    android_version = models.CharField(_("Android Version"), max_length=50)
-    ios_version = models.CharField(_("IOS Version"), max_length=50)
+    android_version = models.CharField(_("Android Version"), max_length=50, null=True, blank=True)
+    ios_version = models.CharField(_("IOS Version"), max_length=50, null=True, blank=True)
     is_android_force_update = models.BooleanField(_("Android force update"))
     is_ios_force_update = models.BooleanField(_("IOS force update"))
-    android_updated_url = models.CharField(_("Android updated url"), max_length=50)
-    ios_updated_url = models.CharField(_("IOS updated url"), max_length=50)
+    android_updated_url = models.CharField(_("Android updated url"), max_length=50, null=True, blank=True)
+    ios_updated_url = models.CharField(_("IOS updated url"), max_length=50, null=True, blank=True)
+    title = models.CharField(_("Change title"), max_length=50, null=True, blank=True)
+    desc = models.TextField(_("Change description"), null=True, blank=True)
     

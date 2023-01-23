@@ -29,7 +29,7 @@ from elekgo_app.authentication import JWTAuthentication, create_access_token, cr
 from elekgo_app.user_permissions import IsAdminUser
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.sessions.backends.db import SessionStore
-from elekgo_app.utils import send_notification, update_or_create_vehicle_data, restructuring_all_vehicles, get_vehicle_location, calculate_ride_distance, carbon_calculation, geocoder_reverse, get_vehicle_detials, geocode_reverse_coordinate
+from elekgo_app.utils import send_notification, update_or_create_vehicle_data, restructuring_all_vehicles, get_vehicle_location, calculate_ride_distance, carbon_calculation, geocoder_reverse, get_vehicle_detials, geocode_reverse_coordinate, bolt_login
 import environ
 from rest_framework.decorators import action
 from elekgo_app.pagination import CustomPagination
@@ -682,8 +682,9 @@ class RideStartStopSerializerView(APIView):
                                 }]
                         }, status=status.HTTP_200_OK)
                     else:
+                        bolt_login(request.user)
                         return Response({
-                                        'message': 'ride cannot be started vehicle is running',
+                                        'message': f'{scooter_coordinate} {unlock_data}',
                                     }, status=status.HTTP_400_BAD_REQUEST)
 
                 if ride_obj.is_ride_end == True:
