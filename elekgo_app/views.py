@@ -8,7 +8,7 @@ from .serializers import PhoneOtpSerializer, UserLoginSerializer, UserRegistrati
     VehicleReportSerializer, ChangePasswordSerializer, CustomerSatisfactionSerializer, PaymentModelSerializer, \
     UserPaymentAccountSerializer, RideStartStopSerializer, NotificationSerializer, AdminUserLoginSerializer, AdminUserRegistrationSerializer,\
     GetAllUserSerializer, RideRunningTimeGet, GetAllKycUserSerializer, UserRideSerializer, UserRideDetailsSerializer, \
-    GetAllUsersSerializer, ReserveSerializer, StationSerializer, UserSerializer, StationVehicleSerializer, VoucherSerializer, RedeemVoucherSerializer
+    GetAllUsersSerializer, ReserveSerializer, StationSerializer, UserSerializer, StationVehicleSerializer, VoucherSerializer, RedeemVoucherSerializer, AppVersionSerializer
 import ast
 from geopy.geocoders import Nominatim
 from geopy.distance import geodesic
@@ -17,7 +17,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from .emails import *
 from .models import FrequentlyAskedQuestions, CustomerSatisfaction, UserPaymentAccount, PaymentModel, Vehicle, \
-    RideTable, NotificationModel, RideTimeHistory, Station, Voucher
+    RideTable, NotificationModel, RideTimeHistory, Station, Voucher, AppVersion
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from decouple import config
@@ -1817,7 +1817,20 @@ class RedeemVoucherApi(ViewSet):
         response = {"message":f"{voucher_obj.amount} amount will be transferred to your wallet", "data":serializer.data}
         return Response(response, status=status.HTTP_200_OK )
 
-
+class AppVersionApi(ViewSet):
+    def list(self, request):
+        queryset = AppVersion.objects.all()
+        serializer = AppVersionSerializer(queryset, many=True)
+        return Response({"data":serializer.data}, status=status.HTTP_200_OK)
+    
+    def retrieve(self, request, pk):
+        try:
+            version_obj = AppVersion.objects.get(pk=pk)
+        except:
+            return Response({"data":"version does not exists"}, status=status.HTTP_400_BAD_REQUEST)
+        serializer = AppVersionSerializer(version_obj)
+        return Response({"data":serializer.data}, status=status.HTTP_200_OK)
+        
 
 
 

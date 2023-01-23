@@ -8,6 +8,7 @@ router.register("station", views.StationApi, basename="station")
 router.register("user", views.UserViewSet , basename="user")
 router.register("voucher", views.VoucherApi , basename="voucher")
 router.register("redeem_voucher", views.RedeemVoucherApi , basename="redeem_voucher")
+router.register("app_version", views.AppVersionApi , basename="app_version")
 
 urlpatterns = [
     path('register/', views.RegisterUserView.as_view(), name='register'),

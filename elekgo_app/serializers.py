@@ -1,10 +1,14 @@
 from rest_framework import serializers
 from .models import User, VehicleReportModel, CustomerSatisfaction, PaymentModel, UserPaymentAccount, \
-  NotificationModel, RideTable, Vehicle, Station, Voucher
+  NotificationModel, RideTable, Vehicle, Station, Voucher, AppVersion
 from time import strftime, gmtime
 import datetime
 from django.db.models import Sum
 
+
+class ResponseSerializer(serializers.ModelSerializer):
+  class Meta:
+    pass
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
   # We are writing this becoz we need confirm password field in our Registratin Request
@@ -418,3 +422,9 @@ class RedeemVoucherSerializer(serializers.ModelSerializer):
   class Meta:
     model = Voucher
     fields = "__all__"
+    
+class AppVersionSerializer(serializers.ModelSerializer):
+  class Meta:
+    model = AppVersion
+    fields = "__all__"
+    read_only_fields = "__all__"
