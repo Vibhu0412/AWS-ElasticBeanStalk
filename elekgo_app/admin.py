@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import User, FrequentlyAskedQuestions, VehicleReportModel, CustomerSatisfaction, PaymentModel, \
-    UserPaymentAccount, RideTable, Vehicle, NotificationModel, RideTimeHistory, Station, Voucher
+    UserPaymentAccount, RideTable, Vehicle, NotificationModel, RideTimeHistory, Station, Voucher, AppVersion
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
 class UserModelAdmin(BaseUserAdmin):
@@ -39,4 +39,5 @@ admin.site.register(NotificationModel)
 admin.site.register(RideTimeHistory)
 admin.site.register(Station)
 admin.site.register(Voucher)
+admin.site.register(AppVersion)
 
