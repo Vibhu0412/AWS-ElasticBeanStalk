@@ -39,6 +39,7 @@ from elekgo.celery import app
 from rest_framework import filters
 import math
 from dotenv import load_dotenv
+from .viewset import CustomViewSet
 load_dotenv()
 
 env = environ.Env()
@@ -1278,7 +1279,7 @@ class CompleteRideDetail(APIView):
                 "gst": '5%',
                 "gst_cost": round(gst_cost, 2),
                 "per_minute_charges_on_running": 2.5,
-                "per_minute_charges_on_pause": 0.5,
+                "per_minute_charges_on_pause": 0.5,                
             }
             return Response(response, status=status.HTTP_200_OK)
         except Exception as e:
@@ -1763,7 +1764,7 @@ class StationApi(ModelViewSet):
     permission_classes = [IsAdminUser]
 
 
-class VoucherApi(ModelViewSet, CustomPagination):
+class VoucherApi(CustomViewSet, CustomPagination):
     queryset = Voucher.objects.all()
     serializer_class = VoucherSerializer
     authentication_classes = [JWTAuthentication]
@@ -1772,7 +1773,7 @@ class VoucherApi(ModelViewSet, CustomPagination):
     search_fields = ["code", "amount"]
     
     def list(self, request, *args, **kwargs):
-        voucher = Voucher.objects.all().count()
+        self.voucher = Voucher.objects.all().count()
         try:
             voucher_status = bool(int(request.query_params.get("status"))) if request.query_params.get("status") else None
         except:
@@ -1791,12 +1792,24 @@ class VoucherApi(ModelViewSet, CustomPagination):
         limit = request.query_params.get("limit") if request.query_params.get("limit") else 10
         results = super().paginate(page=page, request=request, limit=limit, queryset=voucher_list, view=self)
         serializer = VoucherSerializer(results, many=True)
-        return Response({
-            'total_vouchers': voucher,
-            'results': serializer.data,
-            "status": status.HTTP_200_OK,
-        }, status=status.HTTP_200_OK)
-        return super().list(request, *args, **kwargs)
+        # return Response({
+        #     'total_vouchers': voucher,
+        #     'results': serializer.data,
+        #     "status": status.HTTP_200_OK,
+        # }, status=status.HTTP_200_OK)
+        return super().list(serializer.data, *args, **kwargs)
+
+    def retrieve(self, request, pk=None, *args, **kwargs):
+        try:
+            voucher = Voucher.objects.get(pk=pk)
+        except:
+            return Response({'message': "Voucher not found"}, status=status.HTTP_400_BAD_REQUEST)
+        serializer = VoucherSerializer(voucher)
+        # return Response({
+        #     'data': serializer.data,
+        #     "status": status.HTTP_200_OK,
+        # }, status=status.HTTP_200_OK)
+        return super().retrieve(serializer.data, *args, **kwargs)
 
 
 class RedeemVoucherApi(ViewSet):
