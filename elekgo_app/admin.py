@@ -39,5 +39,5 @@ admin.site.register(NotificationModel)
 admin.site.register(RideTimeHistory)
 admin.site.register(Station)
 admin.site.register(Voucher)
-admin.site.register(AppVersion)
+# admin.site.register(AppVersion)
 
