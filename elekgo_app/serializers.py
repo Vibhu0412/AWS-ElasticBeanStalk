@@ -4,6 +4,7 @@ from .models import User, VehicleReportModel, CustomerSatisfaction, PaymentModel
 from time import strftime, gmtime
 import datetime
 from django.db.models import Sum
+from rest_framework import status
 
 
 class ResponseSerializer(serializers.ModelSerializer):
@@ -412,11 +413,27 @@ class StationVehicleSerializer(serializers.ModelSerializer):
   class Meta:
     model = Vehicle
     exclude = ["vehicle_station", "id", "celery_task_id", "qr_image", "iot_device_number", "battery_number", "current_location"]
-    
+
+class ExtraFieldSerializer(serializers.Serializer):
+    def to_representation(self, instance): 
+        # this would have the same as body as in a SerializerMethodField
+        return status.HTTP_200_OK
+
+    def to_internal_value(self, data):
+        # This must return a dictionary that will be used to
+        # update the caller's validation data, i.e. if the result
+        # produced should just be set back into the field that this
+        # serializer is set to, return the following:
+        return {
+          self.field_name: 'Any python object made with data: %s' % data
+        }
+
 class VoucherSerializer(serializers.ModelSerializer):
+  # status = ExtraFieldSerializer(source='*')
   class Meta:
     model = Voucher
     fields = "__all__"
+    # fields = ["amount","code","status"]
     
 class RedeemVoucherSerializer(serializers.ModelSerializer):
   class Meta:
