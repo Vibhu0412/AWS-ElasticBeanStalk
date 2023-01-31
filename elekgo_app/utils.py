@@ -45,8 +45,10 @@ def send_notification(fcm_token, title, desc, user):
         'Authorization': FCM_CLOUD_API_KEY
     } 
   data = json.dumps({
+      "priority": "high",
       "to": fcm_token,
       "notification": {
+          "sound": "default",
           "body": desc,
           "title": title
       }
