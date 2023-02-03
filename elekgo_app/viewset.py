@@ -13,9 +13,9 @@ class CustomViewSet(ModelViewSet):
 
     def list(self, serializer, *args, **kwargs):
         print("i am heereee",serializer)
-        response = {"data":serializer,"status":status.HTTP_200_OK}
+        response = {"total_vouchers":self.voucher, "data":serializer,"status":status.HTTP_200_OK}
 
-        serializer.append({"total_vouchers":self.voucher})
-        serializer.append({"status":status.HTTP_200_OK})
-        return Response(serializer,status=status.HTTP_200_OK)
+        # serializer.append({"total_vouchers":self.voucher})
+        # serializer.append({"status":status.HTTP_200_OK})
+        return Response(response,status=status.HTTP_200_OK)
 
