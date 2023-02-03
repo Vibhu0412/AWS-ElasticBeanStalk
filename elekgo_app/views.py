@@ -895,7 +895,6 @@ class RideStartStopSerializerView(APIView):
                         return Response({'message': 'ride already ended'}, status=status.HTTP_401_UNAUTHORIZED)
                 
             except Exception as e:
-                print('e: ', e.__traceback__())
                 return Response({'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -1047,7 +1046,6 @@ class AdminUserRegisterUserView(APIView):
                 }
                 return Response(response, status=status.HTTP_400_BAD_REQUEST)
             except Exception as e:
-                print('e: ', e.__traceback__())
                 return Response({
                     "status_code": status.HTTP_500_INTERNAL_SERVER_ERROR,
                     "message": "Something went wrong"
