@@ -1780,7 +1780,7 @@ class VoucherApi(CustomViewSet, CustomPagination):
             used_status = bool(int(request.query_params.get("is_used"))) if request.query_params.get("is_used") else None
         except:
             used_status = None
-        queryset = Voucher.objects.all()
+        queryset = Voucher.objects.all().order_by("-pk")
         voucher_list = self.filter_queryset(queryset=queryset)
         if voucher_status:
             voucher_list = voucher_list.filter(is_active=voucher_status)
