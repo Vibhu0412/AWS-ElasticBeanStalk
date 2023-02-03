@@ -1596,7 +1596,7 @@ class GetAvailableVehicles(ViewSet):
         except Exception as E:
             print('E: ', str(E))
             return Response({"message":"Something went wrong", 'Exception': str(E)}, status=status.HTTP_400_BAD_REQUEST)
-        
+
     # @action(methods=['POST'], detail=True)
     # def retrieve(self, request, pk):
     #     """
@@ -1608,7 +1608,7 @@ class GetAvailableVehicles(ViewSet):
     #     vehicle_obj = Vehicle.objects.get_or_create(vehicle_unique_identifier=vehicle_unique_identifier)
     #     serializer = ReserveSerializer(vehicle_obj)
     #     response_data = {"data": serializer.data}
-    #     return Response(response_data, status=status.HTTP_200_OK)        
+    #     return Response(response_data, status=status.HTTP_200_OK)
 
     @action(methods=['POST'], detail=False)
     def reserve(self, request):

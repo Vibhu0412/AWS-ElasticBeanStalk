@@ -85,7 +85,7 @@ class UserManager(BaseUserManager):
 
 
 #  Custom  User Model
-class User(AbstractBaseUser):
+class  User(AbstractBaseUser):
     USER_TYPE_CHOICES = (
         (1, 'admin'),
         (2, 'staff_user'),
