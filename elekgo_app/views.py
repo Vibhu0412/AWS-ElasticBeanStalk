@@ -1596,7 +1596,7 @@ class GetAvailableVehicles(ViewSet):
         except Exception as E:
             print('E: ', str(E))
             return Response({"message":"Something went wrong", 'Exception': str(E)}, status=status.HTTP_400_BAD_REQUEST)
-        
+
     # @action(methods=['POST'], detail=True)
     # def retrieve(self, request, pk):
     #     """
@@ -1608,7 +1608,7 @@ class GetAvailableVehicles(ViewSet):
     #     vehicle_obj = Vehicle.objects.get_or_create(vehicle_unique_identifier=vehicle_unique_identifier)
     #     serializer = ReserveSerializer(vehicle_obj)
     #     response_data = {"data": serializer.data}
-    #     return Response(response_data, status=status.HTTP_200_OK)        
+    #     return Response(response_data, status=status.HTTP_200_OK)
 
     @action(methods=['POST'], detail=False)
     def reserve(self, request):
@@ -1847,7 +1847,39 @@ class AppVersionApi(ViewSet):
         
 
 
+class BattryNotification(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
 
+    def get(self, request):
+        try:
+            send_notification(fcm_token=request.user.fcm_token, title="Low battery", desc=f"Low battery", user=request.user)
+
+            response = {
+                        'message': f'success'
+                    }
+            return Response (response, status=status.HTTP_200_OK)
+        except Exception as e: 
+
+            return Response({'message': "something went wrong"}, status=status.HTTP_400_BAD_REQUEST)
+
+            
+
+class BalanceNotification(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            send_notification(fcm_token=request.user.fcm_token, title="Insufficient Balance", desc=f"Add Amount in Your elekgo app", user=request.user)
+
+            response = {
+                        'message': f'success'
+                    }
+            return Response (response, status=status.HTTP_200_OK)
+        except Exception as e: 
+
+            return Response({'message': "something went wrong"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 

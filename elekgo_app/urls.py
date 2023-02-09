@@ -48,5 +48,8 @@ urlpatterns = [
     path('reset_password/', views.ResetPasswordView.as_view(),name='reset-password'),
     path('verify_otp_password_reset/', views.VeifyOtpForPasswordReset.as_view(),name='verify-otp-password-reset'),
     path('create_new_password/', views.CreateNewPassword.as_view(), name='create_new_password'),
+    path('battery_notification/', views.BattryNotification.as_view(), name='battery_notification'),
+    path('low_balance_notification/', views.BalanceNotification.as_view(), name='low_balance_notification'),
+
 ] + router.urls
 
