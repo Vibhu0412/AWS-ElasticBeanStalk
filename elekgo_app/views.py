@@ -664,10 +664,10 @@ class RideStartStopSerializerView(APIView):
                                             'message': 'ride cannot be started vehicle is running',
                                         }, status=status.HTTP_400_BAD_REQUEST)
                             
-                    unlock_data = unlock_scooter(user.bolt_token, scooter.vehicle_unique_identifier)
+                    # unlock_data = unlock_scooter(user.bolt_token, scooter.vehicle_unique_identifier)
                     scooter_coordinate = get_vehicle_location(scooter.vehicle_unique_identifier, user.id)
                     scooter_address = scooter.vehicle_station.address if scooter.vehicle_station else geocode_reverse_coordinate(scooter_coordinate)
-                    if unlock_data.status_code == 200:
+                    if True:#unlock_data.status_code == 200:
                         scooter.vehicle_station = None
                         scooter.is_reserved = False
                         scooter.is_unlocked = True
@@ -694,8 +694,8 @@ class RideStartStopSerializerView(APIView):
                 if action == "pause":
                     if ride_obj.is_paused == False:
                         ride_pause_obj = RideTimeHistory.objects.create(ride_table_id=ride_obj, pause_time=current_time)
-                        lock_data = lock_scooter(user.bolt_token, scooter.vehicle_unique_identifier)
-                        if lock_data.status_code == 200:
+                        # lock_data = lock_scooter(user.bolt_token, scooter.vehicle_unique_identifier)
+                        if True:#lock_data.status_code == 200:
                             start = datetime.datetime.strptime(str(ride_obj.start_time), "%H:%M:%S")
                             pause = datetime.datetime.strptime(str(current_time), "%H:%M:%S")
                             delta = pause-start
@@ -721,8 +721,8 @@ class RideStartStopSerializerView(APIView):
                 if action == "resume":
                     ride_pause_obj = RideTimeHistory.objects.filter(ride_table_id=ride_obj).last()
                     if ride_obj.is_paused == True:
-                        unlock_data = unlock_scooter(user.bolt_token, scooter.vehicle_unique_identifier)
-                        if unlock_data.status_code == 200:
+                        # unlock_data = unlock_scooter(user.bolt_token, scooter.vehicle_unique_identifier)
+                        if True:#unlock_data.status_code == 200:
                             ride_pause_obj.resume_time = str(current_time)
                             ride_obj.is_paused = False
                             pause = datetime.datetime.strptime(str(ride_pause_obj.pause_time), "%H:%M:%S")
@@ -758,8 +758,8 @@ class RideStartStopSerializerView(APIView):
                         # station_obj = Station.objects.filter(lat__gte=lat-val, lat__lte=lat+val, long__gte=long-val, long__lte=long+val).first()
                         # if station_obj is None:
                         #     return Response({'message': 'You cannot end ride here, ride can only be ended at a station'}, status=status.HTTP_400_BAD_REQUEST)
-                        lock_data = lock_scooter(user.bolt_token, scooter.vehicle_unique_identifier)
-                        if lock_data.status_code == 200:
+                        # lock_data = lock_scooter(user.bolt_token, scooter.vehicle_unique_identifier)
+                        if True:#lock_data.status_code == 200:
                             # scooter.vehicle_station = station_obj
                             scooter.is_unlocked = False
                             scooter.booked_user_id = None
@@ -895,6 +895,7 @@ class RideStartStopSerializerView(APIView):
                         return Response({'message': 'ride already ended'}, status=status.HTTP_401_UNAUTHORIZED)
                 
             except Exception as e:
+                print('e: ', e.__traceback__())
                 return Response({'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -1046,6 +1047,7 @@ class AdminUserRegisterUserView(APIView):
                 }
                 return Response(response, status=status.HTTP_400_BAD_REQUEST)
             except Exception as e:
+                print('e: ', e.__traceback__())
                 return Response({
                     "status_code": status.HTTP_500_INTERNAL_SERVER_ERROR,
                     "message": "Something went wrong"
@@ -1780,7 +1782,7 @@ class VoucherApi(CustomViewSet, CustomPagination):
             used_status = bool(int(request.query_params.get("is_used"))) if request.query_params.get("is_used") else None
         except:
             used_status = None
-        queryset = Voucher.objects.all().order_by("-pk")
+        queryset = Voucher.objects.all()
         voucher_list = self.filter_queryset(queryset=queryset)
         if voucher_status:
             voucher_list = voucher_list.filter(is_active=voucher_status)
@@ -1861,7 +1863,6 @@ class BattryNotification(APIView):
 
             return Response({'message': "something went wrong"}, status=status.HTTP_400_BAD_REQUEST)
 
-            
 
 class BalanceNotification(APIView):
     authentication_classes = [JWTAuthentication]
