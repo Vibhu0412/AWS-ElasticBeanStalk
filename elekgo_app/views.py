@@ -1161,6 +1161,8 @@ class GetCurrentRideTime(APIView):
                 scooter_chassis_no = serializer.validated_data['scooter_chassis_no']
                 current_time = datetime.datetime.now().strftime("%H:%M:%S")
                 ride_id = RideTable.objects.filter(id=ride).last()
+                vehicle_obj = Vehicle.objects.filter(pk = ride_id.vehicle_id.pk).first()
+
                 if ride_id is None:
                     return Response({
                         'message': 'User Data or Vehicle Data does not match with ride data.'
@@ -1173,7 +1175,8 @@ class GetCurrentRideTime(APIView):
                 hour, min = divmod(min, 60)
                 time = '%d:%02d:%02d' % (hour, min, sec)
                 data = {
-                    'ride_running_time': time
+                    'ride_running_time': time,
+                    'battery_percentage': vehicle_obj.battery_percentage
                 }
                 return Response(data=data, status=status.HTTP_200_OK)
             except Exception as e:
