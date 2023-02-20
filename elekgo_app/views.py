@@ -139,7 +139,9 @@ class RegisterUserView(APIView):
                         "user_email": user.email,
                         "is_kyc_verified": user.is_user_kyc_verified,
                         "token": token,
-                        "bolt_token": user.bolt_token
+                        "bolt_token": user.bolt_token,
+                        "referral_code": user.referral_code, 
+                        "is_referral_code_used":user.is_referral_code_used,
                     }
                     return Response(response, status=status.HTTP_201_CREATED)
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -237,6 +239,8 @@ class UserLoginWithEmail(APIView):
                                 "bolt_token": user.bolt_token, #user_auth_token
                                 # "bearer_token": data.,
                                 # "token": ,
+                                "referral_code": user.referral_code, 
+                                "is_referral_code_used":user.is_referral_code_used,
                             }
                             user.bolt_token = user.bolt_token#user_auth_token
                             user.fcm_token=fcm_token
