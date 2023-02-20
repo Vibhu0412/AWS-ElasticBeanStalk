@@ -124,6 +124,8 @@ class  User(AbstractBaseUser):
     total_km = models.FloatField(_("Total Kilometer travelled"), default=0)
     driving_score = models.FloatField(_("Driving score"), default=0)
     avg_speed = models.FloatField(_("Average speed"), default=0)
+    referral_code = models.CharField(max_length=8, blank=True, null=True)
+    is_referral_code_used = models.BooleanField(default=False)
 
     # admin User Fields
     user_role = models.PositiveSmallIntegerField(choices=USER_TYPE_CHOICES, default=5)
@@ -137,6 +139,16 @@ class  User(AbstractBaseUser):
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['user_name', 'phone', 'password', 'fcm_token']
+
+    @classmethod
+    def post_create(cls, sender, instance, created, *args, **kwargs):
+        if created:
+            id_string = str(instance.id)
+            upper_alpha = "ABCDEFGHJKLMNPQRSTVWXYZ1234567890"
+            random_str = "".join(secrets.choice(upper_alpha) for i in range(8))
+            instance.referral_code = (id_string + random_str)[-8:]
+            print("code===============> ",instance.referral_code)
+            instance.save()
 
     def __str__(self):
         return self.email
@@ -157,6 +169,8 @@ class  User(AbstractBaseUser):
         # Simplest possible answer: All admins are staff
         return self.is_admin
 
+
+post_save.connect(User.post_create, sender=User)
 
 class FrequentlyAskedQuestions(models.Model):
     question = models.CharField(max_length=500)
@@ -256,7 +270,7 @@ class Vehicle(models.Model):
 
     def __str__(self):
         return str(self.vehicle_unique_identifier)
-
+ 
     def save(self, *args, **kwargs):
         qr_image = qrcode.make(self.vehicle_unique_identifier)
         qr_offset = Image.new('RGB', (310, 310), 'white')
