@@ -126,6 +126,8 @@ class  User(AbstractBaseUser):
     avg_speed = models.FloatField(_("Average speed"), default=0)
     referral_code = models.CharField(max_length=8, blank=True, null=True)
     is_referral_code_used = models.BooleanField(default=False)
+    rf_used_count = models.IntegerField(default=0)    
+
 
     # admin User Fields
     user_role = models.PositiveSmallIntegerField(choices=USER_TYPE_CHOICES, default=5)

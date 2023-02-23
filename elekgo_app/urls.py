@@ -50,6 +50,8 @@ urlpatterns = [
     path('create_new_password/', views.CreateNewPassword.as_view(), name='create_new_password'),
     path('battery_notification/', views.BattryNotification.as_view(), name='battery_notification'),
     path('low_balance_notification/', views.BalanceNotification.as_view(), name='low_balance_notification'),
+    path('referral_code/', views.ReferralCodeView.as_view(), name='referral_code'),
+
 
 ] + router.urls
 
