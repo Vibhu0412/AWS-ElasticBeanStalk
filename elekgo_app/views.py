@@ -8,7 +8,7 @@ from .serializers import PhoneOtpSerializer, UserLoginSerializer, UserRegistrati
     VehicleReportSerializer, ChangePasswordSerializer, CustomerSatisfactionSerializer, PaymentModelSerializer, \
     UserPaymentAccountSerializer, RideStartStopSerializer, NotificationSerializer, AdminUserLoginSerializer, AdminUserRegistrationSerializer,\
     GetAllUserSerializer, RideRunningTimeGet, GetAllKycUserSerializer, UserRideSerializer, UserRideDetailsSerializer, \
-    GetAllUsersSerializer, ReserveSerializer, StationSerializer, UserSerializer, StationVehicleSerializer, VoucherSerializer, RedeemVoucherSerializer, AppVersionSerializer
+    GetAllUsersSerializer, ReserveSerializer, StationSerializer, UserSerializer, StationVehicleSerializer, VoucherSerializer, RedeemVoucherSerializer, AppVersionSerializer, UserRfCodeSerializer
 import ast
 from geopy.geocoders import Nominatim
 from geopy.distance import geodesic
@@ -1890,6 +1890,50 @@ class BalanceNotification(APIView):
 
 
 
+class ReferralCodeView(APIView):
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+        
+    def post(self, request, *args, **kwargs):
+        Serializer = UserRfCodeSerializer(request.data)
+        rf_user = None
+        user = User.objects.filter(id=request.user.id).first()
+        print('user: ', user)
+        if user.is_referral_code_used == True:
+            response = {
+                "message": "referral code is already used",
+                "status": status.HTTP_400_BAD_REQUEST,
+        
+            }
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+
+        rf = Serializer.data.get("referral_code")
+        if rf != "":
+            rf_user = User.objects.get(referral_code=rf)
+            user.is_referral_code_used = True
+            user.save()
+            rf_user.rf_used_count += 1
+            rf_user.save()
+            print('rf_user.count: ', rf_user.rf_used_count)
+        else:
+            response = {
+                "message": "referral code can not be empty",
+                "status": status.HTTP_400_BAD_REQUEST,
+        
+            }
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+            
+        response = {
+            "message": "referral code is used",
+            "status": status.HTTP_201_CREATED,
+            'user_id': user.id,
+            "referral_code": user.referral_code,
+            "rf_user_id":rf_user.id,
+            "is_referral_code_used":user.is_referral_code_used,
+
+        }
+        return Response(response, status=status.HTTP_201_CREATED)
 
 
 

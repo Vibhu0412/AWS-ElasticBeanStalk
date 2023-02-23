@@ -28,6 +28,17 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     return User.all_users.create_user(**validate_data)
 
 
+
+class UserRfCodeSerializer(serializers.ModelSerializer):
+  # We are writing this becoz we need confirm password field in our Registratin Request
+
+  class Meta:
+    model = User
+    fields=['referral_code']
+    
+
+
+
 class VerifyAccountSerializer(serializers.Serializer):
   otp = serializers.CharField()
   # fcm_token = serializers.CharField()
