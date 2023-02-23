@@ -29,7 +29,7 @@ from elekgo_app.authentication import JWTAuthentication, create_access_token, cr
 from elekgo_app.user_permissions import IsAdminUser
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.sessions.backends.db import SessionStore
-from elekgo_app.utils import send_notification, update_or_create_vehicle_data, restructuring_all_vehicles, get_vehicle_location, calculate_ride_distance, carbon_calculation, geocoder_reverse, get_vehicle_detials, geocode_reverse_coordinate, bolt_login
+from elekgo_app.utils import send_notification, update_or_create_vehicle_data, restructuring_all_vehicles, get_vehicle_location, calculate_ride_distance, carbon_calculation, geocoder_reverse, get_vehicle_detials, geocode_reverse_coordinate
 import environ
 from rest_framework.decorators import action
 from elekgo_app.pagination import CustomPagination
@@ -73,25 +73,24 @@ def get_tokens_for_user(user):
   }
 
 
-def unlock_scooter(token, vin):
-    print("IN UNLOCK SCOOTER =============================== ")
-    url = f"https://bookings.revos.in/vehicles/{vin}/unlock"
+def unlock_scooter(regNo):
+    url = f"https://trackgaddi.com/api/v1/TokenizedVehicle/Controlling/IgnitionOn/{regNo}"
 
     headers = {
-        'token': os.getenv('bolt_app_token'),
-        'authorization': token
+        'TGToken': os.getenv('TGToken')
     }
     response = requests.request("POST", url, headers=headers)
+    print('response: ', response)
     return response
 
 
-def lock_scooter(token, vin):
-    url = f"https://bookings.revos.in/vehicles/{vin}/lock"
+def lock_scooter(regNo):
+    url = f"https://trackgaddi.com/api/v1/TokenizedVehicle/Controlling/IgnitionOff/{regNo}"
     headers = {
-        'token': config('bolt_app_token'),
-        'authorization': token
+        'TGToken': os.getenv('TGToken')
     }
     response = requests.request("POST", url, headers=headers)
+    print('response: ', response)
     return response
 
 
@@ -110,24 +109,6 @@ class RegisterUserView(APIView):
                     # send_twilio_otp_via_phone(phone)
                     user = User.objects.get(email=email)
                     token = get_tokens_for_user(user)
-                    payload = {
-                        # "firstName": "",
-                        "UID": user.id,
-                        # "phone": "",
-                        # "email": ""
-                    }
-                    headers = {
-                        'token': os.getenv("bolt_app_token")
-                    }
-                    url = 'https://auth.revos.in/user/register/open'
-                    response = requests.request("POST", url, headers=headers, data=payload)
-                    data = response.json()
-                    if data.get('status') == 200:
-                        bolt_id = data.get('data').get('user').get('_id')
-                        bolt_token = data.get('data').get('token')
-                        user.bolt_id = bolt_id
-                        user.bolt_token = bolt_token
-                        user.save()
 
                     response = {
                         "success": True,
@@ -139,14 +120,12 @@ class RegisterUserView(APIView):
                         "user_email": user.email,
                         "is_kyc_verified": user.is_user_kyc_verified,
                         "token": token,
-                        "bolt_token": user.bolt_token,
                         "referral_code": user.referral_code, 
                         "is_referral_code_used":user.is_referral_code_used,
                     }
                     return Response(response, status=status.HTTP_201_CREATED)
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             except Exception as e:
-                print("E ==================================", e)
                 return Response({
                     "message":str(e)
                 }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -179,7 +158,6 @@ class VerifyOTP(APIView):
                         "user_email": user.email,
                         "is_kyc_verified": user.is_user_kyc_verified,
                         "token": token,
-                        "bolt_token": user.bolt_token
                     }, status=status.HTTP_200_OK)
                 # return Response({
                 #     "status": 400,
@@ -215,38 +193,22 @@ class UserLoginWithEmail(APIView):
                 if user.is_email_verified:
                     if user_validate:
                         token = get_tokens_for_user(user)
-                        url = "https://auth.revos.in/user/login/open"
-                        payload = {
-                            "UID": user.id
+                        response={
+                            "success": True,
+                            "message": "User logged in Successfully",
+                            "status": status.HTTP_201_CREATED,
+                            'user_id': user.id,
+                            "user_name": user.user_name,
+                            "user_phone": str(user.phone),
+                            "user_email": user.email,
+                            "is_kyc_verified": user.is_user_kyc_verified,
+                            "token": token,
+                            "referral_code": user.referral_code, 
+                            "is_referral_code_used":user.is_referral_code_used,
                         }
-                        headers = {
-                            'token': os.getenv('bolt_app_token')
-                        }
-                        response_bolt = requests.request("POST", url, headers=headers, data=payload)
-                        data = response_bolt.json()
-                        if data.get('status') == 206 or data.get('status') == 200:
-                            user_auth_token = data.get('data').get('token')
-                            response={
-                                "success": True,
-                                "message": "User logged in Successfully",
-                                "status": status.HTTP_201_CREATED,
-                                'user_id': user.id,
-                                "user_name": user.user_name,
-                                "user_phone": str(user.phone),
-                                "user_email": user.email,
-                                "is_kyc_verified": user.is_user_kyc_verified,
-                                "token": token,
-                                "bolt_token": user.bolt_token, #user_auth_token
-                                # "bearer_token": data.,
-                                # "token": ,
-                                "referral_code": user.referral_code, 
-                                "is_referral_code_used":user.is_referral_code_used,
-                            }
-                            user.bolt_token = user.bolt_token#user_auth_token
-                            user.fcm_token=fcm_token
-                            user.save()
-                            return Response(response, status=status.HTTP_201_CREATED)
-                        return Response(data, status=status.HTTP_400_BAD_REQUEST)
+                        user.fcm_token=fcm_token
+                        user.save()
+                        return Response(response, status=status.HTTP_201_CREATED)
                     return Response({
                         'message': "username or password does not match!! please enter correct credentials"
                     }, status=status.HTTP_400_BAD_REQUEST)
@@ -279,40 +241,25 @@ class VerifyOtpLogin(APIView):
                     "message": "Please enter valid otp"
                 }, status=status.HTTP_400_BAD_REQUEST)
 
-            url = "https://auth.revos.in/user/login/open"
-            payload = {
-                "UID": user.id
-            }
-            headers = {
-                'token': os.getenv('bolt_app_token')
-            }
-            response_bolt = requests.request("POST", url, headers=headers, data=payload)
-            data = response_bolt.json()
-            if data.get('status') == 206 or data.get('status') == 200:
-                user_auth_token = data.get('data').get('token')
-                user.bolt_token = user_auth_token
-                user.fcm_token = serializer.validated_data['fcm_token']
-                user.is_email_verified = True
-                user.save()
-                access_token = create_access_token(user.id)
-                refresh_token=create_refresh_token(user.id)
-                id = decode_refresh_token(refresh_token)
-                refresh_access_token = create_access_token(id)
-                return Response({
-                    "success": True,
-                    "status": status.HTTP_201_CREATED,
-                    'user_id': user.id,
-                    "user_name": user.user_name,
-                    "user_phone": str(user.phone),
-                    "user_email": user.email,
-                    "message": "logged in successfully",
-                    "is_kyc_verified": user.is_user_kyc_verified,
-                    "token": get_tokens_for_user(user),
-                    # "access_token": access_token.decode(),
-                    # "refresh_access_token":refresh_access_token.decode(),
-                    "bolt_token": user_auth_token
-                }, status=status.HTTP_200_OK)
-            return Response(data, status=status.HTTP_400_BAD_REQUEST)
+            user.fcm_token = serializer.validated_data['fcm_token']
+            user.is_email_verified = True
+            user.save()
+            access_token = create_access_token(user.id)
+            refresh_token=create_refresh_token(user.id)
+            id = decode_refresh_token(refresh_token)
+            refresh_access_token = create_access_token(id)
+            return Response({
+                "success": True,
+                "status": status.HTTP_201_CREATED,
+                'user_id': user.id,
+                "user_name": user.user_name,
+                "user_phone": str(user.phone),
+                "user_email": user.email,
+                "message": "logged in successfully",
+                "is_kyc_verified": user.is_user_kyc_verified,
+                "token": get_tokens_for_user(user),
+            }, status=status.HTTP_200_OK)
+            
         return Response({
             "message":"Something wents wrong"
         }, status=status.HTTP_400_BAD_REQUEST)
@@ -531,7 +478,6 @@ class UpdateProfileView(APIView):
                     "message": "Profile updated successfully",
                     "is_kyc_verified": user.is_user_kyc_verified,
                     "token": get_tokens_for_user(user),
-                    "bolt_token": user.bolt_token
                 }, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"message": str(e)}, status=status.HTTP_200_OK)
@@ -668,10 +614,10 @@ class RideStartStopSerializerView(APIView):
                                             'message': 'ride cannot be started vehicle is running',
                                         }, status=status.HTTP_400_BAD_REQUEST)
                             
-                    # unlock_data = unlock_scooter(user.bolt_token, scooter.vehicle_unique_identifier)
+                    unlock_data = unlock_scooter(scooter.vehicle_unique_identifier)
                     scooter_coordinate = get_vehicle_location(scooter.vehicle_unique_identifier, user.id)
                     scooter_address = scooter.vehicle_station.address if scooter.vehicle_station else geocode_reverse_coordinate(scooter_coordinate)
-                    if True:#unlock_data.status_code == 200:
+                    if unlock_data.status_code == 200:
                         scooter.vehicle_station = None
                         scooter.is_reserved = False
                         scooter.is_unlocked = True
@@ -687,7 +633,6 @@ class RideStartStopSerializerView(APIView):
                                 }]
                         }, status=status.HTTP_200_OK)
                     else:
-                        bolt_login(request.user)
                         return Response({
                                         'message': f'{scooter_coordinate} {unlock_data}',
                                     }, status=status.HTTP_400_BAD_REQUEST)
@@ -698,8 +643,8 @@ class RideStartStopSerializerView(APIView):
                 if action == "pause":
                     if ride_obj.is_paused == False:
                         ride_pause_obj = RideTimeHistory.objects.create(ride_table_id=ride_obj, pause_time=current_time)
-                        # lock_data = lock_scooter(user.bolt_token, scooter.vehicle_unique_identifier)
-                        if True:#lock_data.status_code == 200:
+                        lock_data = lock_scooter(scooter.vehicle_unique_identifier)
+                        if lock_data.status_code == 200:
                             start = datetime.datetime.strptime(str(ride_obj.start_time), "%H:%M:%S")
                             pause = datetime.datetime.strptime(str(current_time), "%H:%M:%S")
                             delta = pause-start
@@ -725,8 +670,8 @@ class RideStartStopSerializerView(APIView):
                 if action == "resume":
                     ride_pause_obj = RideTimeHistory.objects.filter(ride_table_id=ride_obj).last()
                     if ride_obj.is_paused == True:
-                        # unlock_data = unlock_scooter(user.bolt_token, scooter.vehicle_unique_identifier)
-                        if True:#unlock_data.status_code == 200:
+                        unlock_data = unlock_scooter(scooter.vehicle_unique_identifier)
+                        if unlock_data.status_code == 200:
                             ride_pause_obj.resume_time = str(current_time)
                             ride_obj.is_paused = False
                             pause = datetime.datetime.strptime(str(ride_pause_obj.pause_time), "%H:%M:%S")
@@ -755,15 +700,15 @@ class RideStartStopSerializerView(APIView):
                 if action == 'end':
                     ride_pause_queryset = RideTimeHistory.objects.filter(ride_table_id=ride_obj)
                     if ride_obj.is_ride_end == False:
-                        update_or_create_vehicle_data(user.id)
+                        update_or_create_vehicle_data()
                         # val = 0.0010
                         # lat = float(scooter.lat)
                         # long = float(scooter.long)
                         # station_obj = Station.objects.filter(lat__gte=lat-val, lat__lte=lat+val, long__gte=long-val, long__lte=long+val).first()
                         # if station_obj is None:
                         #     return Response({'message': 'You cannot end ride here, ride can only be ended at a station'}, status=status.HTTP_400_BAD_REQUEST)
-                        # lock_data = lock_scooter(user.bolt_token, scooter.vehicle_unique_identifier)
-                        if True:#lock_data.status_code == 200:
+                        lock_data = lock_scooter(scooter.vehicle_unique_identifier)
+                        if lock_data.status_code == 200:
                             # scooter.vehicle_station = station_obj
                             scooter.is_unlocked = False
                             scooter.booked_user_id = None
@@ -1016,35 +961,17 @@ class AdminUserRegisterUserView(APIView):
                     email = serializer.validated_data['email']
                     user = User.objects.get(email=email)
                     token = get_verification_token(user)
-                    payload = {
-                        "firstName": "",
-                        "UID": str(user.id),
-                        "phone": "",
-                        "email": ""
+                    user.save()
+                    response = {
+                        "status_code": status.HTTP_201_CREATED,
+                        'user_id': user.id,
+                        "user_name": user.user_name,
+                        "user_phone": str(user.phone),
+                        "user_email": str(user.email),
                     }
-                    headers = {
-                        'token': os.getenv('bolt_app_token')
-                    }
-                    url = 'https://auth.revos.in/user/register/open'
-                    response = requests.request("POST", url, headers=headers, data=payload)
-                    data = response.json()
-                    if data.get('status') == status.HTTP_200_OK:
-                        bolt_id = data.get('data').get('user').get('_id')
-                        bolt_token = data.get('data').get('token')
-                        user.bolt_id = bolt_id
-                        user.bolt_token = bolt_token
-                        user.save()
-                        response = {
-                            "status_code": status.HTTP_201_CREATED,
-                            'user_id': user.id,
-                            "user_name": user.user_name,
-                            "user_phone": str(user.phone),
-                            "user_email": str(user.email),
-                            # "token": token
-                        }
-                        link = f"http://{request.get_host()}/verify_admin_user/?token={token}"
-                        send_verification_link(email, link)
-                        return Response(response, status=status.HTTP_201_CREATED)
+                    link = f"http://{request.get_host()}/verify_admin_user/?token={token}"
+                    send_verification_link(email, link)
+                    return Response(response, status=status.HTTP_201_CREATED)
                 response = {
                     "status_code": status.HTTP_400_BAD_REQUEST,
                     "errors": serializer.errors
@@ -1097,32 +1024,19 @@ class AdminUserLogin(APIView):
                 # if user.is_email_verified:
                 if user_validate:
                     token = get_tokens_for_user(user)
-                    url = "https://auth.revos.in/user/login/open"
-                    payload = {
-                        "UID": user.id
+                    response = {
+                        "status_code": 200,
+                        "message": "User logged in Successfully",
+                        'user_id': user.id,
+                        "user_name": user.user_name,
+                        "user_phone": str(user.phone),
+                        "user_email": user.email,
+                        "user_role": user.user_role,
+                        "token": token
                     }
-                    headers = {
-                        'token': os.getenv('bolt_app_token')
-                    }
-                    response_bolt = requests.request("POST", url, headers=headers, data=payload)
-                    data = response_bolt.json()
-                    if data.get('status') == 206 or data.get('status') == 200:
-                        user_auth_token = data.get('data').get('token')
-                        response = {
-                            "status_code": 200,
-                            "message": "User logged in Successfully",
-                            'user_id': user.id,
-                            "user_name": user.user_name,
-                            "user_phone": str(user.phone),
-                            "user_email": user.email,
-                            "user_role": user.user_role,
-                            "token": token
-                        }
-                        user.bolt_token = user_auth_token
-                        user.fcm_token = fcm_token
-                        user.save()
-                        return Response(response, status=status.HTTP_200_OK)
-                    return Response(data, status=status.HTTP_400_BAD_REQUEST)
+                    user.fcm_token = fcm_token
+                    user.save()
+                    return Response(response, status=status.HTTP_200_OK)
                 # send_otp_via_email(user.email)
                 return Response({
                     "status_code": 400,
@@ -1301,7 +1215,7 @@ class UnlockScooter(APIView):
     def post(self, request, pk):
         user = User.objects.get(id=pk)
         vin = Vehicle.objects.get(vehicle_unique_identifier=request.data.get('scooter_chassis_number'))
-        unlock_data = unlock_scooter(user.bolt_token, vin.vehicle_unique_identifier)
+        unlock_data = unlock_scooter(vin.vehicle_unique_identifier)
         if unlock_data.status_code == 200:
             vin.is_unlocked = True
             vin.save()
@@ -1350,83 +1264,6 @@ class UserRideDetails(APIView):
             return Response({'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-def locations_data(pk):
-    user = User.objects.get(id=pk)
-    url = 'https://bookings.revos.in/user/vehicles/all'
-    headers = {
-        'token': os.getenv('bolt_app_token'),
-        'authorization': user.bolt_token
-    }
-    response = requests.request("GET", url, headers=headers)
-    if response.status_code == status.HTTP_200_OK:
-        data = response.json()
-        lat_long_data = []
-        for rec in range(len(data.get('vehicles'))):
-            if data.get('vehicles')[rec].get("rentalStatus") == "AVAILABLE":
-                latitude = data.get('vehicles')[rec].get('location').get('latitude')
-                longitude = data.get('vehicles')[rec].get('location').get('longitude')
-                vin = data.get('vehicles')[rec].get('location').get('vin')
-                lat_long_data.append((latitude, longitude, vin))
-        origin = lat_long_data[0][0:2]
-        locations = []
-        vehicle_data = {}
-        for rec in range(0, len(lat_long_data)):
-            dist = (lat_long_data[rec][0:2])
-            total_km = geodesic(origin, dist).kilometers
-            # vehicle = Vehicle.objects.get(vehicle_unique_identifier=lat_long_data[rec][2])
-            reverse_str = str(dist[0])[0:9] + "," + str(dist[1])[0:9]
-            lat = str(dist[0])[0:9]
-            long = str(dist[1])[0:9]
-            latitude = lat_long_data[rec][0]
-            longtitude = lat_long_data[rec][1]
-            vehicle = Vehicle.objects.filter(vehicle_unique_identifier=lat_long_data[rec][2]).first()
-            is_reserved = vehicle.is_reserved
-            reserved_user = vehicle.reserverd_user_id.pk if vehicle.reserverd_user_id else ""
-            if dist[0] is None or dist[1] is None:
-                continue
-            if geocoder_reverse(lat, long) in locations:#geolocator.reverse(reverse_str).raw['address']['postcode'] in locations:
-                new_dict = str(vehicle_data.get(geocoder_reverse(lat, long).get('features')[0].get("properties").get("geocoding").get("label"))) + "," + str({
-                    # "num": rec,
-                    # "km": round(total_km, 2),
-                    # "location": geolocator.reverse(dist[0] + "," + dist[1]).raw['address']['postcode'],
-                    "latitude": latitude,
-                    "longtitude": longtitude,
-                    'vehicle': lat_long_data[rec][2],
-                    "is_reserved": is_reserved,
-                    "reserved_user": reserved_user,
-                    "battery_percentage": 50,
-                    "max_km_capacity": "25/Km"
-                    # "is_reserved": vehicle.is_reserved,
-                    # "battery_percentage": vehicle.battery_percentage,
-                    # "max_km_capacity": vehicle.total_km_capacity
-                })
-                vehicle_data.update({geocoder_reverse(lat, long).get('features')[0].get("properties").get("geocoding").get("label"): new_dict })
-            else:
-                locations.append(geocoder_reverse(lat, long).get('features')[0].get("properties").get("geocoding").get("label"))
-                vehicle_data.update({
-                    geocoder_reverse(lat, long).get('features')[0].get("properties").get("geocoding").get("label") : {
-                        # "num": rec,
-                        # "km": round(total_km, 2),
-                        # "location": geolocator.reverse(dist[0] + "," + dist[1]).raw['address']['postcode'],
-                        "latitude": latitude,
-                        "longtitude": longtitude,
-                        'vehicle': lat_long_data[rec][2],
-                        "is_reserved": is_reserved,
-                        "reserved_user": reserved_user,
-                        "battery_percentage": 50,
-                        "max_km_capacity": "25/Km"
-                        # "is_reserved": vehicle.is_reserved,
-                        # "battery_percentage": vehicle.battery_percentage,
-                        # "max_km_capacity": vehicle.total_km_capacity
-                    }
-                })
-
-            rec += 1
-        return vehicle_data
-    else:
-        return response
-
-
 class GetAvailableVehicles(ViewSet):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -1436,7 +1273,7 @@ class GetAvailableVehicles(ViewSet):
         pk = request.user.id
         user_lat = str(request.data.get("user_lat"))
         user_long = str(request.data.get("user_long"))
-        update_or_create_vehicle_data(pk)
+        update_or_create_vehicle_data()
         vehicle = restructuring_all_vehicles(pk)
         try:
             for key in vehicle:
@@ -1561,7 +1398,7 @@ class GetAvailableVehicles(ViewSet):
         try:
             all_data = []
             pk = request.user.id
-            update_or_create_vehicle_data(pk)
+            update_or_create_vehicle_data()
             
             station_queryset = Station.objects.all()
             for key in station_queryset:
@@ -1581,7 +1418,7 @@ class GetAvailableVehicles(ViewSet):
     def retrieve(self, request, pk=None):
         try:
             user_id = request.user.id
-            update_or_create_vehicle_data(user_id)
+            update_or_create_vehicle_data()
             station_obj = Station.objects.filter(pk=pk).first()
             scooter = station_obj.station_object.filter(vehicle_station=station_obj.id)
             serializer = StationVehicleSerializer(scooter, many=True)
@@ -1595,7 +1432,7 @@ class GetAvailableVehicles(ViewSet):
         try:
             station_id = request.data.get("station_id")
             user_id = request.user.id
-            update_or_create_vehicle_data(user_id)
+            update_or_create_vehicle_data()
             station_obj = Station.objects.filter(pk=station_id).first()
             scooter = station_obj.station_object.filter(vehicle_station=station_obj.id)
             serializer = StationVehicleSerializer(scooter, many=True)
@@ -1958,18 +1795,7 @@ class ReferralCodeView(APIView):
 #                 return Response({
 #                     "message": "Please enter valid otp"
 #                 }, status=status.HTTP_400_BAD_REQUEST)
-#             url = "https://auth.revos.in/user/login/open"
-#             payload = {
-#                 "UID": user.id
-#             }
-#             headers = {
-#                 'token': config('bolt_app_token')
-#             }
-#             response_bolt = requests.request("POST", url, headers=headers, data=payload)
-#             data = response_bolt.json()
-#             if data.get('status') == 200:
-#                 user_auth_token = data.get('data').get('token')
-#                 user.bolt_token = user_auth_token
+#             
 #                 user.fcm_token = serializer.validated_data['fcm_token']
 #                 user.is_email_verified = True
 #                 user.save()
@@ -1988,9 +1814,7 @@ class ReferralCodeView(APIView):
 #                     "is_kyc_verified": user.is_user_kyc_verified,
 #                     "access": access_token,
 #                     "refresh": refresh_access_token,
-#                     "bolt_token": user_auth_token
 #                 }, status=status.HTTP_200_OK)
-#             return Response(data, status=status.HTTP_400_BAD_REQUEST)
 #         return Response({
 #             "message":"Something wents wrong"
 #         }, status=status.HTTP_400_BAD_REQUEST)

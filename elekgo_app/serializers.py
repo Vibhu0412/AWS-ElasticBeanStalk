@@ -409,7 +409,7 @@ class UserSerializer(serializers.ModelSerializer):
   total_carbon_saved = serializers.SerializerMethodField()
   class Meta:
     model = User
-    exclude = ["password", "is_email_verified", "otp", "bolt_id", "bolt_token", "fcm_token"]
+    exclude = ["password", "is_email_verified", "otp", "fcm_token"]
     
   def get_total_carbon_saved(self, obj):
     total_carbon_saved = round(obj.total_carbon_saved, 2)

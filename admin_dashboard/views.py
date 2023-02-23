@@ -80,7 +80,7 @@ class AssetUnlock(APIView):
             vin = request.data.get('vin')
             user = User.objects.get(id=pk)
             scooter = Vehicle.objects.get(vehicle_unique_identifier=vin)
-            unlock_data = unlock_scooter(user.bolt_token, vin)
+            unlock_data = unlock_scooter(vin)
             if unlock_data.status_code == 200:
                 scooter.is_unlocked = True
                 scooter.save()
@@ -138,7 +138,7 @@ class AssetLock(APIView):
             vin = request.data.get('vin')
             user = User.objects.get(id=pk)
             scooter = Vehicle.objects.get(vehicle_unique_identifier=vin)
-            lock_data = lock_scooter(user.bolt_token, vin)
+            lock_data = lock_scooter(vin)
             if lock_data.status_code == 200:
                 scooter.is_unlocked = False
                 scooter.save()
