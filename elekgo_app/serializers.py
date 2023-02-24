@@ -444,3 +444,9 @@ class AppVersionSerializer(serializers.ModelSerializer):
   class Meta:
     model = AppVersion
     fields = "__all__"
+class OrderSerializer(serializers.Serializer):
+  email = serializers.EmailField()
+  phone = serializers.CharField(max_length = 12)
+  amount =serializers.FloatField()
+  class Meta: 
+      fields = ['email','phone','amount']

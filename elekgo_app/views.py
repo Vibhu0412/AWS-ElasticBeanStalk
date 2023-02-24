@@ -8,7 +8,8 @@ from .serializers import PhoneOtpSerializer, UserLoginSerializer, UserRegistrati
     VehicleReportSerializer, ChangePasswordSerializer, CustomerSatisfactionSerializer, PaymentModelSerializer, \
     UserPaymentAccountSerializer, RideStartStopSerializer, NotificationSerializer, AdminUserLoginSerializer, AdminUserRegistrationSerializer,\
     GetAllUserSerializer, RideRunningTimeGet, GetAllKycUserSerializer, UserRideSerializer, UserRideDetailsSerializer, \
-    GetAllUsersSerializer, ReserveSerializer, StationSerializer, UserSerializer, StationVehicleSerializer, VoucherSerializer, RedeemVoucherSerializer, AppVersionSerializer
+    GetAllUsersSerializer, ReserveSerializer, StationSerializer, UserSerializer, StationVehicleSerializer, VoucherSerializer, RedeemVoucherSerializer, AppVersionSerializer,OrderSerializer
+import requests
 import ast
 from geopy.geocoders import Nominatim
 from geopy.distance import geodesic
@@ -17,7 +18,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from .emails import *
 from .models import FrequentlyAskedQuestions, CustomerSatisfaction, UserPaymentAccount, PaymentModel, Vehicle, \
-    RideTable, NotificationModel, RideTimeHistory, Station, Voucher, AppVersion
+    RideTable, NotificationModel, RideTimeHistory, Station, Voucher, AppVersion,Order
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from decouple import config
@@ -1950,3 +1951,48 @@ class BalanceNotification(APIView):
 #         return Response({
 #             "message":"Something wents wrong"
 #         }, status=status.HTTP_400_BAD_REQUEST)
+
+class OrderAPI(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+
+        orderSerializer = OrderSerializer(data = request.data)
+        if orderSerializer.is_valid():
+            email = orderSerializer.data.get("email")
+            phone = orderSerializer.data.get("phone")
+            amount = orderSerializer.data.get("amount")
+            print("amount---------------__>",orderSerializer.data,amount,email,phone)
+            order = Order.objects.create(price=amount,phone=phone,customer_id = request.user.id)
+            url = "https://sandbox.cashfree.com/pg/orders"
+
+            payload = {
+                "customer_details": {
+                    "customer_id": order.customer_id,
+                    "customer_email": email,
+                    "customer_phone": phone,
+                },
+                "order_meta": {"payment_methods": "cc"},
+                "order_id": order.order_id,
+                "order_amount": amount,
+                "order_currency": "INR"
+            }
+            headers = {
+                "accept": "application/json",
+                "x-client-id": "325613a9d1a0b3774c6512e194316523",
+                "x-client-secret": "de28de047cef87a23c979b986329d9b1e16b0bd4",
+                "x-api-version": "2022-01-01",
+                "content-type": "application/json"
+            }
+
+            response = requests.post(url, json=payload, headers=headers)
+
+            print(response.text)
+
+            return Response(response.json(),status=status.HTTP_200_OK)
+        return Response({"error":orderSerializer.errors},status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=["POST"],detail=False)
+    def payment_api(self,request):
+        pass
