@@ -455,3 +455,8 @@ class AppVersionSerializer(serializers.ModelSerializer):
   class Meta:
     model = AppVersion
     fields = "__all__"
+    
+class StationSerializer(serializers.ModelSerializer):
+  class Meta:
+    model = Station
+    fields = ["address", "lat", "long"]

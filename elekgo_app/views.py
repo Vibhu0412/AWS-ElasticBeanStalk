@@ -40,6 +40,7 @@ from rest_framework import filters
 import math
 from dotenv import load_dotenv
 from .viewset import CustomViewSet
+from django.forms.models import model_to_dict
 load_dotenv()
 
 env = environ.Env()
@@ -1274,18 +1275,30 @@ class GetAvailableVehicles(ViewSet):
         user_lat = str(request.data.get("user_lat"))
         user_long = str(request.data.get("user_long"))
         update_or_create_vehicle_data()
-        vehicle = restructuring_all_vehicles(pk)
+        station = Station.objects.all()
         try:
-            for key in vehicle:
-                scooter = ast.literal_eval(vehicle[key]) if type(vehicle[key]) == str else [vehicle[key]]
-                # address = geocoder_reverse.delay(scooter[0].get('latitude'), scooter[0].get('longtitude')).get('features')[0].get("properties").get("geocoding").get("label")
-                # print('address: ', address)
-                all_data.append({
-                    "location_stand": "Sector 25, Gandhinagar, Gandhinagar Taluka, Gandhinagar District, Gujarat, 382027, India",
-                    "latitude": scooter[0].get('latitude'),
-                    "longitude": scooter[0].get('longtitude'),
-                    "scooter_data": scooter,
-                })
+        # "scooter_data": [
+        #         {
+        #             "latitude": "23.25248",
+        #             "longtitude": "72.63383",
+        #             "vehicle": "WCM202100002",
+        #             "is_reserved": false,
+        #             "reserved_user": "",
+        #             "per_min_charge": "2.5",
+        #             "battery_percentage": 50,
+        #             "max_km_capacity": "25/Km"
+        #         },
+            for key in station:
+                scooter = list(key.station_object.all().values("lat", "long", "vehicle_unique_identifier", "is_reserved", "reserverd_user_id", "per_min_charge", "battery_percentage", "total_km_capacity"))
+                station_dict = model_to_dict(key)
+                station_dict["scooter_data"] = scooter
+                all_data.append(station_dict)
+                # all_data.append({
+                #     "location_stand": "Sector 25, Gandhinagar, Gandhinagar Taluka, Gandhinagar District, Gujarat, 382027, India",
+                #     "latitude": scooter[0].get('latitude'),
+                #     "longitude": scooter[0].get('longtitude'),
+                #     "scooter_data": scooter,
+                # })
             return Response({'vehicle_data': all_data }, status=status.HTTP_200_OK)
         except Exception as E:
             print('E: ', str(E))
