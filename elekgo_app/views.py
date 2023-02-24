@@ -3,7 +3,7 @@ import json
 from rest_framework.views import APIView
 from rest_framework.viewsets import ViewSet, ModelViewSet
 from .renderers import UserRenderer
-from .serializers import PhoneOtpSerializer, UserLoginSerializer, UserRegistrationSerializer, VerifyAccountSerializer, \
+from .serializers import PhoneOtpSerializer, UserLoginSerializer, UserRegistrationSerializer, UserRfCodeSerializer, VerifyAccountSerializer, \
     ResendOtpSerializer, VerifyAccountSerializerLogin, FrequentlyAskedQuestionSerializer, UserKycVerificationSerializer,\
     VehicleReportSerializer, ChangePasswordSerializer, CustomerSatisfactionSerializer, PaymentModelSerializer, \
     UserPaymentAccountSerializer, RideStartStopSerializer, NotificationSerializer, AdminUserLoginSerializer, AdminUserRegistrationSerializer,\
@@ -18,7 +18,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from .emails import *
 from .models import FrequentlyAskedQuestions, CustomerSatisfaction, UserPaymentAccount, PaymentModel, Vehicle, \
-    RideTable, NotificationModel, RideTimeHistory, Station, Voucher, AppVersion,Order
+    RideTable, NotificationModel, RideTimeHistory, Station, Voucher, AppVersion
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from decouple import config
@@ -522,14 +522,16 @@ class PaymentView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
-        request.data['payment_amount'] = request.data['payment_amount'].replace(',', '')
-        request.data['payment_user_id'] = request.user.id
         serializer = PaymentModelSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            payment_model = PaymentModel.objects.get(order_id=serializer.data.get("order_id"))
             # user_id = serializer.validated_data['payment_user_id']
-            pay_user_id = request.data['payment_user_id']
-            received_amount = request.data['payment_amount']
+            payment_model.payment_signature = serializer.data.get("payment_signature")
+            payment_model.payment_note = serializer.data.get("payment_note")
+            payment_model.payment_id = serializer.data.get("payment_id")
+            payment_model.save()
+            pay_user_id = payment_model.payment_user_id.id
+            received_amount = payment_model.payment_amount
             data = {
                 "account_user_id": pay_user_id,
                 "account_amount": received_amount
@@ -1825,24 +1827,24 @@ class OrderAPI(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-
         orderSerializer = OrderSerializer(data = request.data)
         if orderSerializer.is_valid():
             email = orderSerializer.data.get("email")
             phone = orderSerializer.data.get("phone")
             amount = orderSerializer.data.get("amount")
-            print("amount---------------__>",orderSerializer.data,amount,email,phone)
-            order = Order.objects.create(price=amount,phone=phone,customer_id = request.user.id)
+
+            print("amount---------------__>",orderSerializer.data,amount,email,phone)         
+            payment = PaymentModel.objects.create(payment_amount=amount,phone=phone,payment_user_id = request.user)
             url = "https://sandbox.cashfree.com/pg/orders"
 
             payload = {
                 "customer_details": {
-                    "customer_id": order.customer_id,
+                    "customer_id": str(payment.payment_user_id.id),
                     "customer_email": email,
                     "customer_phone": phone,
                 },
                 "order_meta": {"payment_methods": "cc"},
-                "order_id": order.order_id,
+                "order_id": payment.order_id,
                 "order_amount": amount,
                 "order_currency": "INR"
             }
@@ -1861,6 +1863,6 @@ class OrderAPI(APIView):
             return Response(response.json(),status=status.HTTP_200_OK)
         return Response({"error":orderSerializer.errors},status=status.HTTP_400_BAD_REQUEST)
 
-    @action(methods=["POST"],detail=False)
-    def payment_api(self,request):
-        pass
+    # @action(methods=["POST"],detail=False)
+    # def payment_api(self,request):
+    #     pass

@@ -133,16 +133,21 @@ class CustomerSatisfactionSerializer(serializers.ModelSerializer):
       return instance
 
 
-class PaymentModelSerializer(serializers.ModelSerializer):
+class PaymentModelSerializer(serializers.Serializer):
+  payment_signature = serializers.CharField(max_length = 200)
+  payment_note = serializers.CharField(max_length = 100)
+  payment_id = serializers.CharField(max_length = 100)
+  order_id = serializers.CharField(max_length = 100)
   class Meta:
-    model = PaymentModel
-    fields = '__all__'
+    fields = ['payment_signature','payment_note','payment_id','order_id']
 
     def validate(self, attrs):
       return attrs
 
-    def create(self, validate_data):
-      return PaymentModel.objects.create_user(**validate_data)
+    # def create(self, validate_data):
+    #   order_id = validate_data['order_id']
+
+    #   return PaymentModel.objects.get()
 
 
 class UserPaymentAccountSerializer(serializers.ModelSerializer):

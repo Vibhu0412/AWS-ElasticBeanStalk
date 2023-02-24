@@ -209,12 +209,27 @@ class CustomerSatisfaction(models.Model):
     def __str__(self):
         return str(self.user_id)
 
-class Order(models.Model):
-    customer_id = models.ForeignKey(User,on_delete=models.CASCADE)
-    phone = models.CharField(("Phone Number"), max_length=12)
-    order_id = models.CharField(("Customer ID"), max_length=50)
-    price = models.FloatField(("Amount"))
+# class Order(models.Model):
+#     customer_id = models.ForeignKey(User,on_delete=models.CASCADE)
+#     order_id = models.CharField(("Customer ID"), max_length=50)
+#     price = models.FloatField(("Amount"))
 
+
+
+class PaymentModel(models.Model):
+    payment_user_id = models.ForeignKey(User,on_delete=models.CASCADE)
+    payment_id = models.CharField(max_length=100,null=True,blank=True)
+    order_id = models.CharField(max_length=100,null=True,blank=True)
+    phone = models.CharField(("Phone Number"), max_length=12)
+    payment_signature = models.CharField(max_length=200, null=True, blank=True)
+    payment_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    payment_date = models.DateField(auto_now_add=True)
+    payment_note = models.CharField(max_length=100)
+    #new order id fk is added without replacing order id
+    # order_id_fk = models.ForeignKey(Order, verbose_name=_("Order ID FK"), on_delete=models.CASCADE)
+    def __str__(self):
+        return str(self.payment_user_id)
+    
     @classmethod
     def post_create(cls, sender, instance, created, *args, **kwargs):
         if created:
@@ -225,20 +240,7 @@ class Order(models.Model):
             random_str = "".join(secrets.choice(upper_alpha) for i in range(5))
             instance.order_id = ("O" + id_string + random_str)
             instance.save()
-post_save.connect(Order.post_create, sender=Order)
-
-class PaymentModel(models.Model):
-    payment_user_id = models.ForeignKey(User,on_delete=models.CASCADE)
-    payment_id = models.CharField(max_length=100)
-    order_id = models.CharField(max_length=100,null=True,blank=True)
-    payment_signature = models.CharField(max_length=200, null=True, blank=True)
-    payment_amount = models.DecimalField(max_digits=10, decimal_places=2)
-    payment_date = models.DateField(auto_now_add=True)
-    payment_note = models.CharField(max_length=100)
-    #new order id fk is added without replacing order id
-    order_id_fk = models.ForeignKey(Order, verbose_name=_("Order ID FK"), on_delete=models.CASCADE)
-    def __str__(self):
-        return str(self.payment_user_id)
+post_save.connect(PaymentModel.post_create, sender=PaymentModel)
 
 
 class UserPaymentAccount(models.Model):
