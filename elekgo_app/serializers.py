@@ -28,6 +28,17 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     return User.all_users.create_user(**validate_data)
 
 
+
+class UserRfCodeSerializer(serializers.ModelSerializer):
+  # We are writing this becoz we need confirm password field in our Registratin Request
+
+  class Meta:
+    model = User
+    fields=['referral_code']
+    
+
+
+
 class VerifyAccountSerializer(serializers.Serializer):
   otp = serializers.CharField()
   # fcm_token = serializers.CharField()
@@ -398,7 +409,7 @@ class UserSerializer(serializers.ModelSerializer):
   total_carbon_saved = serializers.SerializerMethodField()
   class Meta:
     model = User
-    exclude = ["password", "is_email_verified", "otp", "bolt_id", "bolt_token", "fcm_token"]
+    exclude = ["password", "is_email_verified", "otp", "fcm_token"]
     
   def get_total_carbon_saved(self, obj):
     total_carbon_saved = round(obj.total_carbon_saved, 2)

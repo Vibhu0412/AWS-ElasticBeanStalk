@@ -58,55 +58,49 @@ def send_notification(fcm_token, title, desc, user):
     NotificationModel.objects.create(user_id=user, notification_title=title, notification_description=desc)
   return response
 
-def get_vehicle_location(vin, pk):
-  user = User.objects.get(id=pk)
-  url = 'https://bookings.revos.in/user/vehicles/all'
+def get_vehicle_location(vin):
+  url = f'http://trackgaddi.com/api/v1/TokenizedReports/Vehicle/{vin}/LiveData'
   headers = {
-      'token': os.getenv('bolt_app_token'),
-      'authorization': user.bolt_token
+      'TGToken': os.getenv('TGToken'),
   }
   response = requests.request("GET", url, headers=headers)
   if response.status_code == status.HTTP_200_OK:
     data = response.json()
-    for key in data.get("vehicles"):
-      if key.get("vin") == vin:
-        coordinate = str(key.get("location").get("latitude"))[0:9] + "," + str(key.get("location").get("longitude"))[0:9]
-        return coordinate
+    print('data: ', data)
+    return data
   else:
-    return "Bad response from bolt get all vehicle api"
+    return "Bad response from IOT get all vehicle api"
 
-def update_or_create_vehicle_data(pk):
-  """Utitlity for getting all vehicles list from bolt api and updating project's database"""
-  user = User.objects.get(id=pk)
-  url = 'https://bookings.revos.in/user/vehicles/all'
+def update_or_create_vehicle_data():
+  """Utitlity for getting all vehicles list from IOT api and updating project's database"""
+  url = 'http://trackgaddi.com/api/v1/TokenizedReports/Vehicle/LiveData'
   headers = {
-      'token': os.getenv('bolt_app_token'),
-      'authorization': user.bolt_token
+        'TGToken': os.getenv('TGToken')
   }
   response = requests.request("GET", url, headers=headers)
   if response.status_code == status.HTTP_200_OK:
     data = response.json()
     
     vehicles = []
-    for i in range(len(data.get('vehicles'))):
+    for i in range(len(data)):
       val = 0.0010
-      lat = float(str(data.get('vehicles')[i].get('location').get("latitude"))[0:6])
-      long = float(str(data.get('vehicles')[i].get('location').get("longitude"))[0:6])
+      vin = data[i].get('VehicleId')
+      lat = float(str(data[i].get('Latitude'))[0:6])
+      long = float(str(data[i].get('Longitude'))[0:6])
       station_obj = Station.objects.filter(lat__gte=lat-val, lat__lte=lat+val, long__gte=long-val, long__lte=long+val).first()
       if station_obj is not None:
-        vehicles.append(Vehicle(vehicle_unique_identifier=data.get('vehicles')[i].get('vin'), vehicle_station=station_obj, lat=lat, long=long))
+        vehicles.append(Vehicle(vehicle_unique_identifier=vin, vehicle_station=station_obj, lat=lat, long=long))
       else:
-        vehicles.append(Vehicle(vehicle_unique_identifier=data.get('vehicles')[i].get('vin'), vehicle_station=None, lat=lat, long=long))
+        vehicles.append(Vehicle(vehicle_unique_identifier=vin, vehicle_station=None, lat=lat, long=long))
     Vehicle.objects.bulk_update_or_create(vehicles, ["vehicle_unique_identifier", "vehicle_station", "lat", "long"], match_field='vehicle_unique_identifier')
   else:
     return response
 
-def get_vehicle_detials(vin, user):
-  url = f"https://bookings.revos.in/user/vehicles/{vin}"
+def get_vehicle_detials(vehicleId):
+  url = f"http://trackgaddi.com/api/v1/TokenizedReports/Vehicle/{vehicleId}/LiveData"
   headers = {
-        'token': os.getenv('bolt_app_token'),
-        'authorization': user.bolt_token
-    }
+        'TGToken': os.getenv('TGToken')
+  }
   response = requests.request("GET", url, headers=headers)
   return response
 
@@ -143,16 +137,11 @@ def geocoder_reverse(lat, long):
     print('E: ', str(E))
     return None
 
-def restructuring_all_vehicles(pk):
-  #user instance
-  user = User.objects.filter(pk=pk).first()
-  
-  
-  #calling bolt api
+def restructuring_all_vehicles():
+  #calling IOT api
   url = 'https://bookings.revos.in/user/vehicles/all'
   headers = {
-      'token': os.getenv('bolt_app_token'),
-      'authorization': user.bolt_token
+      'TGToken': os.getenv('TGToken'),
   }
   response = requests.request("GET", url, headers=headers)
   
@@ -228,19 +217,6 @@ def carbon_calculation(ride_km):
   carbon_emmision_per_km = 90
   ride_carbon_footprint = round(ride_km * carbon_emmision_per_km, 2)
   return ride_carbon_footprint
-
-def bolt_login(user):
-  url = "https://auth.revos.in/user/login/open"
-  payload = {"UID": {user.id}}
-  headers = {
-    'token': os.getenv('bolt_app_token'),
-  }
-  response = requests.request("POST", url, headers=headers, data=payload)
-  if response.status_code == status.HTTP_206_PARTIAL_CONTENT or response.status_code == status.HTTP_200_OK:
-    bolt_token = response.json().get("data").get("token") 
-    User.objects.update(bolt_token=bolt_token)
-  else:
-    print('response: ', dir(response), response.json())
 
 
 

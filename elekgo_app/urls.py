@@ -51,6 +51,8 @@ urlpatterns = [
     path('battery_notification/', views.BattryNotification.as_view(), name='battery_notification'),
     path('low_balance_notification/', views.BalanceNotification.as_view(), name='low_balance_notification'),
     path('order',views.OrderAPI.as_view(),name="create_order"),
+    path('referral_code/', views.ReferralCodeView.as_view(), name='referral_code'),
+
 
 ] + router.urls
 
