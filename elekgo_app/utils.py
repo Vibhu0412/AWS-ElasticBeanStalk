@@ -59,6 +59,7 @@ def send_notification(fcm_token, title, desc, user):
   return response
 
 def get_vehicle_location(vin):
+  print('vin: ', vin)
   url = f'http://trackgaddi.com/api/v1/TokenizedReports/Vehicle/{vin}/LiveData'
   headers = {
       'TGToken': os.getenv('TGToken'),
@@ -66,7 +67,7 @@ def get_vehicle_location(vin):
   response = requests.request("GET", url, headers=headers)
   if response.status_code == status.HTTP_200_OK:
     data = response.json()
-    print('data: ', data)
+    print('get vehicle location data: ', data)
     return data
   else:
     return "Bad response from IOT get all vehicle api"
@@ -85,14 +86,17 @@ def update_or_create_vehicle_data():
     for i in range(len(data)):
       val = 0.0010
       vin = data[i].get('VehicleId')
+      vehicle_name = data[i].get('VehicleName')
       lat = float(str(data[i].get('Latitude'))[0:6])
       long = float(str(data[i].get('Longitude'))[0:6])
+      battery = data[i].get('')
+      number_of_km_used = data[i].get('')
       station_obj = Station.objects.filter(lat__gte=lat-val, lat__lte=lat+val, long__gte=long-val, long__lte=long+val).first()
       if station_obj is not None:
-        vehicles.append(Vehicle(vehicle_unique_identifier=vin, vehicle_station=station_obj, lat=lat, long=long))
+        vehicles.append(Vehicle(vehicle_unique_identifier=vin, vehicle_station=station_obj, lat=lat, long=long, vehicle_name=vehicle_name))
       else:
-        vehicles.append(Vehicle(vehicle_unique_identifier=vin, vehicle_station=None, lat=lat, long=long))
-    Vehicle.objects.bulk_update_or_create(vehicles, ["vehicle_unique_identifier", "vehicle_station", "lat", "long"], match_field='vehicle_unique_identifier')
+        vehicles.append(Vehicle(vehicle_unique_identifier=vin, vehicle_station=None, lat=lat, long=long, vehicle_name=vehicle_name))
+    Vehicle.objects.bulk_update_or_create(vehicles, ["vehicle_unique_identifier", "vehicle_station", "lat", "long", "vehicle_name"], match_field='vehicle_unique_identifier')
   else:
     return response
 

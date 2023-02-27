@@ -75,24 +75,25 @@ def get_tokens_for_user(user):
   }
 
 
-def unlock_scooter(regNo):
-    url = f"https://trackgaddi.com/api/v1/TokenizedVehicle/Controlling/IgnitionOn/{regNo}"
+def unlock_scooter(name):
+    print('name: ', name)
+    url = f"https://trackgaddi.com/api/v1/TokenizedVehicle/Controlling/IgnitionOn/{name}"
 
     headers = {
         'TGToken': os.getenv('TGToken')
     }
-    response = requests.request("POST", url, headers=headers)
-    print('response: ', response)
+    response = requests.request("GET", url, headers=headers)
+    print('unlock response: ', response.json(), response.status_code)
     return response
 
 
-def lock_scooter(regNo):
-    url = f"https://trackgaddi.com/api/v1/TokenizedVehicle/Controlling/IgnitionOff/{regNo}"
+def lock_scooter(name):
+    url = f"https://trackgaddi.com/api/v1/TokenizedVehicle/Controlling/IgnitionOff/{name}"
     headers = {
         'TGToken': os.getenv('TGToken')
     }
-    response = requests.request("POST", url, headers=headers)
-    print('response: ', response)
+    response = requests.request("GET", url, headers=headers)
+    print('lock response: ', response.json(), response.status_code)
     return response
 
 
@@ -618,10 +619,14 @@ class RideStartStopSerializerView(APIView):
                                             'message': 'ride cannot be started vehicle is running',
                                         }, status=status.HTTP_400_BAD_REQUEST)
                             
-                    unlock_data = unlock_scooter(scooter.vehicle_unique_identifier)
-                    scooter_coordinate = get_vehicle_location(scooter.vehicle_unique_identifier, user.id)
+                    unlock_data = unlock_scooter(scooter.vehicle_name)
+                    scooter_coordinate = get_vehicle_location(scooter.vehicle_unique_identifier)
                     scooter_address = scooter.vehicle_station.address if scooter.vehicle_station else geocode_reverse_coordinate(scooter_coordinate)
                     if unlock_data.status_code == 200:
+                        if unlock_data.json().get("IsError") == True:
+                            return Response({
+                                        'message': str(unlock_data.json().get("Message")),
+                                    }, status=status.HTTP_400_BAD_REQUEST)
                         scooter.vehicle_station = None
                         scooter.is_reserved = False
                         scooter.is_unlocked = True
@@ -647,8 +652,12 @@ class RideStartStopSerializerView(APIView):
                 if action == "pause":
                     if ride_obj.is_paused == False:
                         ride_pause_obj = RideTimeHistory.objects.create(ride_table_id=ride_obj, pause_time=current_time)
-                        lock_data = lock_scooter(scooter.vehicle_unique_identifier)
+                        lock_data = lock_scooter(scooter.vehicle_name)
                         if lock_data.status_code == 200:
+                            if unlock_data.json().get("IsError") == True:
+                                return Response({
+                                        'message': str(unlock_data.json().get("Message")),
+                                    }, status=status.HTTP_400_BAD_REQUEST)
                             start = datetime.datetime.strptime(str(ride_obj.start_time), "%H:%M:%S")
                             pause = datetime.datetime.strptime(str(current_time), "%H:%M:%S")
                             delta = pause-start
@@ -674,8 +683,12 @@ class RideStartStopSerializerView(APIView):
                 if action == "resume":
                     ride_pause_obj = RideTimeHistory.objects.filter(ride_table_id=ride_obj).last()
                     if ride_obj.is_paused == True:
-                        unlock_data = unlock_scooter(scooter.vehicle_unique_identifier)
+                        unlock_data = unlock_scooter(scooter.vehicle_name)
                         if unlock_data.status_code == 200:
+                            if unlock_data.json().get("IsError") == True:
+                                return Response({
+                                        'message': str(unlock_data.json().get("Message")),
+                                    }, status=status.HTTP_400_BAD_REQUEST)
                             ride_pause_obj.resume_time = str(current_time)
                             ride_obj.is_paused = False
                             pause = datetime.datetime.strptime(str(ride_pause_obj.pause_time), "%H:%M:%S")
@@ -711,8 +724,12 @@ class RideStartStopSerializerView(APIView):
                         # station_obj = Station.objects.filter(lat__gte=lat-val, lat__lte=lat+val, long__gte=long-val, long__lte=long+val).first()
                         # if station_obj is None:
                         #     return Response({'message': 'You cannot end ride here, ride can only be ended at a station'}, status=status.HTTP_400_BAD_REQUEST)
-                        lock_data = lock_scooter(scooter.vehicle_unique_identifier)
+                        lock_data = lock_scooter(scooter.vehicle_name)
                         if lock_data.status_code == 200:
+                            if unlock_data.json().get("IsError") == True:
+                                return Response({
+                                        'message': str(unlock_data.json().get("Message")),
+                                    }, status=status.HTTP_400_BAD_REQUEST)
                             # scooter.vehicle_station = station_obj
                             scooter.is_unlocked = False
                             scooter.booked_user_id = None
@@ -751,7 +768,7 @@ class RideStartStopSerializerView(APIView):
                             ride_obj.is_ride_running = False
                             ride_obj.is_ride_end = True
                             ride_obj.is_paused = False
-                            scooter_coordinate = get_vehicle_location(scooter.vehicle_unique_identifier, user.id)
+                            scooter_coordinate = get_vehicle_location(scooter.vehicle_unique_identifier)
                             ride_obj.end_location = scooter.vehicle_station.address if scooter.vehicle_station else geocode_reverse_coordinate(scooter_coordinate)
                             ride_obj.save()
 
@@ -848,7 +865,7 @@ class RideStartStopSerializerView(APIView):
                         return Response({'message': 'ride already ended'}, status=status.HTTP_401_UNAUTHORIZED)
                 
             except Exception as e:
-                print('e: ', e.__traceback__())
+                print('e: ', e.__traceback__)
                 return Response({'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
