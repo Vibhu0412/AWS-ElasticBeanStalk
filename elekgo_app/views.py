@@ -76,7 +76,6 @@ def get_tokens_for_user(user):
 
 
 def unlock_scooter(name):
-    print('name: ', name)
     url = f"https://trackgaddi.com/api/v1/TokenizedVehicle/Controlling/IgnitionOn/{name}"
 
     headers = {
@@ -863,7 +862,7 @@ class RideStartStopSerializerView(APIView):
                         return Response({'message': 'ride already ended'}, status=status.HTTP_401_UNAUTHORIZED)
                 
             except Exception as e:
-                print('e: ', e.__traceback__)
+                print('e: ', e.__traceback__())
                 return Response({'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

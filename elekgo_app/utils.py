@@ -59,7 +59,6 @@ def send_notification(fcm_token, title, desc, user):
   return response
 
 def get_vehicle_location(vin):
-  print('vin: ', vin)
   url = f'http://trackgaddi.com/api/v1/TokenizedReports/Vehicle/{vin}/LiveData'
   headers = {
       'TGToken': os.getenv('TGToken'),
@@ -67,7 +66,6 @@ def get_vehicle_location(vin):
   response = requests.request("GET", url, headers=headers)
   if response.status_code == status.HTTP_200_OK:
     data = response.json()
-    print('get vehicle location data: ', data)
     return data
   else:
     return "Bad response from IOT get all vehicle api"
