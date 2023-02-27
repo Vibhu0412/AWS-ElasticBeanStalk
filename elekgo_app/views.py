@@ -862,7 +862,7 @@ class RideStartStopSerializerView(APIView):
                         return Response({'message': 'ride already ended'}, status=status.HTTP_401_UNAUTHORIZED)
                 
             except Exception as e:
-                print('e: ', e.__traceback__())
+                print('e: ', e.__traceback__)
                 return Response({'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
