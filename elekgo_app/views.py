@@ -618,7 +618,8 @@ class RideStartStopSerializerView(APIView):
                             
                     unlock_data = unlock_scooter(scooter.vehicle_name)
                     scooter_coordinate = get_vehicle_location(scooter.vehicle_unique_identifier)
-                    scooter_address = scooter.vehicle_station.address if scooter.vehicle_station else geocode_reverse_coordinate(scooter_coordinate)
+                    print('scooter_coordinate: ', scooter_coordinate)
+                    scooter_address = scooter.vehicle_station.address if scooter.vehicle_station else None #geocode_reverse_coordinate(scooter_coordinate)
                     if unlock_data.status_code == 200:
                         if unlock_data.json().get("IsError") == True:
                             return Response({
@@ -640,7 +641,7 @@ class RideStartStopSerializerView(APIView):
                         }, status=status.HTTP_200_OK)
                     else:
                         return Response({
-                                        'message': f'{scooter_coordinate} {unlock_data}',
+                                        'message': f'{scooter_coordinate} {unlock_data.status_code}',
                                     }, status=status.HTTP_400_BAD_REQUEST)
 
                 if ride_obj.is_ride_end == True:
@@ -766,7 +767,7 @@ class RideStartStopSerializerView(APIView):
                             ride_obj.is_ride_end = True
                             ride_obj.is_paused = False
                             scooter_coordinate = get_vehicle_location(scooter.vehicle_unique_identifier)
-                            ride_obj.end_location = scooter.vehicle_station.address if scooter.vehicle_station else geocode_reverse_coordinate(scooter_coordinate)
+                            ride_obj.end_location = scooter.vehicle_station.address if scooter.vehicle_station else None #geocode_reverse_coordinate(scooter_coordinate)
                             ride_obj.save()
 
                             km_list = [1.3, 0.5, 1.21, 0.73, 1.91, 1.68, 2.43, 1.76]
@@ -862,7 +863,7 @@ class RideStartStopSerializerView(APIView):
                         return Response({'message': 'ride already ended'}, status=status.HTTP_401_UNAUTHORIZED)
                 
             except Exception as e:
-                print('e: ', e.__traceback__)
+                print('e: ', e.__traceback__())
                 return Response({'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

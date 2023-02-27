@@ -66,7 +66,7 @@ def get_vehicle_location(vin):
   response = requests.request("GET", url, headers=headers)
   if response.status_code == status.HTTP_200_OK:
     data = response.json()
-    return data
+    return round(data[0].get("Latitude"), 6), round(data[0].get("Longitude"), 6)
   else:
     return "Bad response from IOT get all vehicle api"
 
