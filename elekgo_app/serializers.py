@@ -139,7 +139,7 @@ class PaymentModelSerializer(serializers.Serializer):
   payment_id = serializers.CharField(max_length = 100)
   order_id = serializers.CharField(max_length = 100)
   class Meta:
-    fields = ['payment_signature','payment_note','payment_id','order_id']
+    fields = ['payment_signature','payment_note','payment_id','order_id',"payment_date"]
 
     def validate(self, attrs):
       return attrs

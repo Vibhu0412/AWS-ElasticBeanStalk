@@ -1100,13 +1100,18 @@ class GetCurrentRideTime(APIView):
                 ride_id = RideTable.objects.filter(id=ride).last()
                 vehicle_obj = Vehicle.objects.filter(pk = ride_id.vehicle_id.pk).first()
 
+                if ride_id.is_ride_end == True:
+                    return Response({
+                        'message': 'Ride already ended.'
+                    }, status=status.HTTP_400_BAD_REQUEST)
+                
                 if ride_id is None:
                     return Response({
                         'message': 'User Data or Vehicle Data does not match with ride data.'
                     }, status=status.HTTP_400_BAD_REQUEST)
                 
                 if ride_id.is_paused == True:
-                    running_time = str(datetime.timedelta(minutes=ride_id.total_running_time))
+                    running_time = str(datetime.timedelta(seconds=ride_id.total_running_time))
                     min, sec = divmod(get_sec(str(running_time)), 60)
                     hour, min = divmod(min, 60)
                     time = '%d:%02d:%02d' % (hour, min, sec)
