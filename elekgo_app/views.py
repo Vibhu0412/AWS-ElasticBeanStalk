@@ -618,8 +618,7 @@ class RideStartStopSerializerView(APIView):
                             
                     unlock_data = unlock_scooter(scooter.vehicle_name)
                     scooter_coordinate = get_vehicle_location(scooter.vehicle_unique_identifier)
-                    print('scooter_coordinate: ', scooter_coordinate)
-                    scooter_address = scooter.vehicle_station.address if scooter.vehicle_station else None #geocode_reverse_coordinate(scooter_coordinate)
+                    scooter_address = scooter.vehicle_station.address if scooter.vehicle_station else "location" #geocode_reverse_coordinate(scooter_coordinate)
                     if unlock_data.status_code == 200:
                         if unlock_data.json().get("IsError") == True:
                             return Response({
@@ -767,7 +766,7 @@ class RideStartStopSerializerView(APIView):
                             ride_obj.is_ride_end = True
                             ride_obj.is_paused = False
                             scooter_coordinate = get_vehicle_location(scooter.vehicle_unique_identifier)
-                            ride_obj.end_location = scooter.vehicle_station.address if scooter.vehicle_station else None #geocode_reverse_coordinate(scooter_coordinate)
+                            ride_obj.end_location = scooter.vehicle_station.address if scooter.vehicle_station else "Location" #geocode_reverse_coordinate(scooter_coordinate)
                             ride_obj.save()
 
                             km_list = [1.3, 0.5, 1.21, 0.73, 1.91, 1.68, 2.43, 1.76]
