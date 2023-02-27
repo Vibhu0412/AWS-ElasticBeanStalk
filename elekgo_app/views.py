@@ -524,16 +524,14 @@ class PaymentView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
+        request.data['payment_amount'] = request.data['payment_amount'].replace(',', '')
+        request.data['payment_user_id'] = request.user.id
         serializer = PaymentModelSerializer(data=request.data)
         if serializer.is_valid():
-            payment_model = PaymentModel.objects.get(order_id=serializer.data.get("order_id"))
+            serializer.save()
             # user_id = serializer.validated_data['payment_user_id']
-            payment_model.payment_signature = serializer.data.get("payment_signature")
-            payment_model.payment_note = serializer.data.get("payment_note")
-            payment_model.payment_id = serializer.data.get("payment_id")
-            payment_model.save()
-            pay_user_id = payment_model.payment_user_id.id
-            received_amount = payment_model.payment_amount
+            pay_user_id = request.data['payment_user_id']
+            received_amount = request.data['payment_amount']
             data = {
                 "account_user_id": pay_user_id,
                 "account_amount": received_amount
@@ -654,9 +652,9 @@ class RideStartStopSerializerView(APIView):
                         ride_pause_obj = RideTimeHistory.objects.create(ride_table_id=ride_obj, pause_time=current_time)
                         lock_data = lock_scooter(scooter.vehicle_name)
                         if lock_data.status_code == 200:
-                            if unlock_data.json().get("IsError") == True:
+                            if lock_data.json().get("IsError") == True:
                                 return Response({
-                                        'message': str(unlock_data.json().get("Message")),
+                                        'message': str(lock_data.json().get("Message")),
                                     }, status=status.HTTP_400_BAD_REQUEST)
                             start = datetime.datetime.strptime(str(ride_obj.start_time), "%H:%M:%S")
                             pause = datetime.datetime.strptime(str(current_time), "%H:%M:%S")
@@ -726,9 +724,9 @@ class RideStartStopSerializerView(APIView):
                         #     return Response({'message': 'You cannot end ride here, ride can only be ended at a station'}, status=status.HTTP_400_BAD_REQUEST)
                         lock_data = lock_scooter(scooter.vehicle_name)
                         if lock_data.status_code == 200:
-                            if unlock_data.json().get("IsError") == True:
+                            if lock_data.json().get("IsError") == True:
                                 return Response({
-                                        'message': str(unlock_data.json().get("Message")),
+                                        'message': str(lock_data.json().get("Message")),
                                     }, status=status.HTTP_400_BAD_REQUEST)
                             # scooter.vehicle_station = station_obj
                             scooter.is_unlocked = False
@@ -1106,10 +1104,22 @@ class GetCurrentRideTime(APIView):
                     return Response({
                         'message': 'User Data or Vehicle Data does not match with ride data.'
                     }, status=status.HTTP_400_BAD_REQUEST)
-                    
+                
+                if ride_id.is_paused == True:
+                    running_time = str(datetime.timedelta(minutes=ride_id.total_running_time))
+                    min, sec = divmod(get_sec(str(running_time)), 60)
+                    hour, min = divmod(min, 60)
+                    time = '%d:%02d:%02d' % (hour, min, sec)
+                    data = {
+                        'ride_running_time': time,
+                        'battery_percentage': vehicle_obj.battery_percentage
+                    }
+                    return Response(data=data, status=status.HTTP_200_OK)
+                                    
                 current = datetime.datetime.strptime(str(current_time), "%H:%M:%S")
                 start = datetime.datetime.strptime(str(ride_id.start_time), "%H:%M:%S")
-                delta = current - start
+                pause_time = str(datetime.timedelta(minutes=ride_id.total_pause_time))
+                delta = current - start - pause_time
                 min, sec = divmod(get_sec(str(delta)), 60)
                 hour, min = divmod(min, 60)
                 time = '%d:%02d:%02d' % (hour, min, sec)
