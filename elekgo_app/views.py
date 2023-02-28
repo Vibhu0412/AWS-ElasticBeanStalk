@@ -1793,21 +1793,38 @@ class ReferralCodeView(APIView):
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
 
         rf = Serializer.data.get("referral_code")
-        if rf != "":
-            rf_user = User.objects.get(referral_code=rf)
-            user.is_referral_code_used = True
-            user.save()
-            rf_user.rf_used_count += 1
-            rf_user.save()
-            print('rf_user.count: ', rf_user.rf_used_count)
-        else:
-            response = {
-                "message": "referral code can not be empty",
+        rf_exist = User.objects.filter(referral_code=rf).exists()
+        if rf_exist == False:
+                response = {
+                "message": "referral code not found",
                 "status": status.HTTP_400_BAD_REQUEST,
         
             }
-            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+                return Response(response, status=status.HTTP_400_BAD_REQUEST)
+        if rf_exist == True:
+            if rf != "":
+                rf_user = User.objects.get(referral_code=rf)
             
+                user.is_referral_code_used = True
+                user.save()
+                rf_user.rf_used_count += 1
+                rf_user.save()
+                print('rf_user.count: ', rf_user.rf_used_count)
+            else:
+                response = {
+                    "message": "referral code can not be empty",
+                    "status": status.HTTP_400_BAD_REQUEST,
+            
+                }
+                return Response(response, status=status.HTTP_400_BAD_REQUEST)
+        else: 
+         response = {
+                    "message": "referral code not found",
+                    "status": status.HTTP_400_BAD_REQUEST,
+            
+                }
+         return Response(response, status=status.HTTP_400_BAD_REQUEST)
+
         response = {
             "message": "referral code is used",
             "status": status.HTTP_201_CREATED,
@@ -1818,6 +1835,7 @@ class ReferralCodeView(APIView):
 
         }
         return Response(response, status=status.HTTP_201_CREATED)
+
 
 
 
