@@ -134,13 +134,12 @@ class CustomerSatisfactionSerializer(serializers.ModelSerializer):
 
 
 class PaymentModelSerializer(serializers.Serializer):
-  payment_signature = serializers.CharField(max_length = 200)
   payment_note = serializers.CharField(max_length = 100)
-  payment_id = serializers.CharField(max_length = 100)
   order_id = serializers.CharField(max_length = 100)
-  payment_date = serializers.CharField(max_length = 100)
+  payment_amount = serializers.FloatField()
+  payment_date = serializers.CharField(max_length = 100,default=None)
   class Meta:
-    fields = ['payment_signature','payment_note','payment_id','order_id',"payment_date"]
+    fields = ['payment_note','order_id',"payment_date","payment_amount"]
 
     def validate(self, attrs):
       return attrs

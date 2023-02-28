@@ -222,9 +222,10 @@ class PaymentModel(models.Model):
     order_id = models.CharField(max_length=100,null=True,blank=True)
     phone = models.CharField(("Phone Number"), max_length=12)
     payment_signature = models.CharField(max_length=200, null=True, blank=True)
-    payment_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    payment_amount = models.DecimalField(max_digits=10, decimal_places=2,null=True,blank=True)
     payment_date = models.DateField(auto_now_add=True)
     payment_note = models.CharField(max_length=100)
+    is_cashfree_payment = models.BooleanField(_("Is Cashfree Payment?"),default=True)
     #new order id fk is added without replacing order id
     # order_id_fk = models.ForeignKey(Order, verbose_name=_("Order ID FK"), on_delete=models.CASCADE)
     def __str__(self):

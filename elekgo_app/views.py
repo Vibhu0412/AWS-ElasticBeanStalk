@@ -523,25 +523,45 @@ class PaymentView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
-        request.data['payment_amount'] = request.data['payment_amount'].replace(',', '')
+        # request.data['payment_amount'] = request.data['payment_amount'].replace(',', '')
         request.data['payment_user_id'] = request.user.id
         serializer = PaymentModelSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            order_id = serializer.data.get("order_id")
             # user_id = serializer.validated_data['payment_user_id']
             pay_user_id = request.data['payment_user_id']
             received_amount = request.data['payment_amount']
+            payment_note = request.data['payment_note']
             data = {
                 "account_user_id": pay_user_id,
                 "account_amount": received_amount
             }
+            if PaymentModel.objects.get(order_id=order_id).payment_amount != "":
+                PaymentModel.objects.filter(order_id=order_id).update(payment_amount = received_amount,payment_note = payment_note)
+            else:
+                PaymentModel.objects.filter(order_id=order_id).update(payment_note = payment_note)
+            if payment_note == 'CREDIT':
+                url = f"https://sandbox.cashfree.com/pg/orders/{order_id}"
+
+                headers = {
+                    "accept": "application/json",
+                    "x-client-id": "325613a9d1a0b3774c6512e194316523",
+                    "x-client-secret": "de28de047cef87a23c979b986329d9b1e16b0bd4",
+                    "x-api-version": "2022-09-01",
+                    "content-type": "application/json"
+                }
+
+                response = requests.get(url, headers=headers)
+                response = response.json()
+            else:
+                response = f"{received_amount} Credited to your Wallet"
             try:
                 pay_user = UserPaymentAccount.objects.get(account_user_id=pay_user_id)
                 amount = pay_user.account_amount
                 final_amount = float(amount) + float(received_amount)
                 UserPaymentAccount.objects.filter(account_user_id=pay_user_id).update(account_amount=final_amount)
                 send_notification(fcm_token=request.user.fcm_token, title="Payment succesfull", desc="Payment Details Saved Successfully, Your wallet has been updated", user=request.user)
-                return Response({
+                return Response({"data":response,
                     "message": "Payment Details Saved Successfully, Your wallet has been updated"
                 }, status=status.HTTP_201_CREATED)
             except Exception as E:
@@ -549,7 +569,7 @@ class PaymentView(APIView):
                 if serializer.is_valid():
                     serializer.save()
                     send_notification(fcm_token=request.user.fcm_token, title="Payment Created", desc="Your wallet has been updated", user=request.user)
-                    return Response({"message": "Your wallet has been updated"}, status=status.HTTP_201_CREATED)
+                    return Response({"data":response,"message": "Your wallet has been updated"}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
