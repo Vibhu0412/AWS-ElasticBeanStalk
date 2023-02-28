@@ -1898,7 +1898,7 @@ class OrderAPI(APIView):
                 "accept": "application/json",
                 "x-client-id": "325613a9d1a0b3774c6512e194316523",
                 "x-client-secret": "de28de047cef87a23c979b986329d9b1e16b0bd4",
-                "x-api-version": "2022-01-01",
+                "x-api-version": "2022-09-01",
                 "content-type": "application/json"
             }
 
