@@ -1110,7 +1110,8 @@ class GetCurrentRideTime(APIView):
                     }, status=status.HTTP_400_BAD_REQUEST)
                 
                 if ride_id.is_paused == True:
-                    running_time = str(datetime.timedelta(seconds=ride_id.total_running_time))
+                    running_time = datetime.timedelta(seconds=ride_id.total_running_time)
+                    print('running_time: ', running_time)
                     min, sec = divmod(get_sec(str(running_time)), 60)
                     hour, min = divmod(min, 60)
                     time = '%d:%02d:%02d' % (hour, min, sec)
@@ -1122,7 +1123,8 @@ class GetCurrentRideTime(APIView):
                                     
                 current = datetime.datetime.strptime(str(current_time), "%H:%M:%S")
                 start = datetime.datetime.strptime(str(ride_id.start_time), "%H:%M:%S")
-                pause_time = str(datetime.timedelta(minutes=ride_id.total_pause_time))
+                pause_time = datetime.timedelta(seconds=ride_id.total_pause_time)
+                print('pause_time: ', pause_time)
                 delta = current - start - pause_time
                 min, sec = divmod(get_sec(str(delta)), 60)
                 hour, min = divmod(min, 60)
