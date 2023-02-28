@@ -41,6 +41,7 @@ from rest_framework import filters
 import math
 from dotenv import load_dotenv
 from .viewset import CustomViewSet
+from django.forms.models import model_to_dict
 load_dotenv()
 
 env = environ.Env()
@@ -74,24 +75,24 @@ def get_tokens_for_user(user):
   }
 
 
-def unlock_scooter(regNo):
-    url = f"https://trackgaddi.com/api/v1/TokenizedVehicle/Controlling/IgnitionOn/{regNo}"
+def unlock_scooter(name):
+    url = f"https://trackgaddi.com/api/v1/TokenizedVehicle/Controlling/IgnitionOn/{name}"
 
     headers = {
         'TGToken': os.getenv('TGToken')
     }
-    response = requests.request("POST", url, headers=headers)
-    print('response: ', response)
+    response = requests.request("GET", url, headers=headers)
+    print('unlock response: ', response.json(), response.status_code)
     return response
 
 
-def lock_scooter(regNo):
-    url = f"https://trackgaddi.com/api/v1/TokenizedVehicle/Controlling/IgnitionOff/{regNo}"
+def lock_scooter(name):
+    url = f"https://trackgaddi.com/api/v1/TokenizedVehicle/Controlling/IgnitionOff/{name}"
     headers = {
         'TGToken': os.getenv('TGToken')
     }
-    response = requests.request("POST", url, headers=headers)
-    print('response: ', response)
+    response = requests.request("GET", url, headers=headers)
+    print('lock response: ', response.json(), response.status_code)
     return response
 
 
@@ -522,16 +523,14 @@ class PaymentView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
+        request.data['payment_amount'] = request.data['payment_amount'].replace(',', '')
+        request.data['payment_user_id'] = request.user.id
         serializer = PaymentModelSerializer(data=request.data)
         if serializer.is_valid():
-            payment_model = PaymentModel.objects.get(order_id=serializer.data.get("order_id"))
+            serializer.save()
             # user_id = serializer.validated_data['payment_user_id']
-            payment_model.payment_signature = serializer.data.get("payment_signature")
-            payment_model.payment_note = serializer.data.get("payment_note")
-            payment_model.payment_id = serializer.data.get("payment_id")
-            payment_model.save()
-            pay_user_id = payment_model.payment_user_id.id
-            received_amount = payment_model.payment_amount
+            pay_user_id = request.data['payment_user_id']
+            received_amount = request.data['payment_amount']
             data = {
                 "account_user_id": pay_user_id,
                 "account_amount": received_amount
@@ -617,10 +616,14 @@ class RideStartStopSerializerView(APIView):
                                             'message': 'ride cannot be started vehicle is running',
                                         }, status=status.HTTP_400_BAD_REQUEST)
                             
-                    unlock_data = unlock_scooter(scooter.vehicle_unique_identifier)
-                    scooter_coordinate = get_vehicle_location(scooter.vehicle_unique_identifier, user.id)
-                    scooter_address = scooter.vehicle_station.address if scooter.vehicle_station else geocode_reverse_coordinate(scooter_coordinate)
+                    unlock_data = unlock_scooter(scooter.vehicle_name)
+                    scooter_coordinate = get_vehicle_location(scooter.vehicle_unique_identifier)
+                    scooter_address = scooter.vehicle_station.address if scooter.vehicle_station else "location" #geocode_reverse_coordinate(scooter_coordinate)
                     if unlock_data.status_code == 200:
+                        if unlock_data.json().get("IsError") == True:
+                            return Response({
+                                        'message': str(unlock_data.json().get("Message")),
+                                    }, status=status.HTTP_400_BAD_REQUEST)
                         scooter.vehicle_station = None
                         scooter.is_reserved = False
                         scooter.is_unlocked = True
@@ -637,7 +640,7 @@ class RideStartStopSerializerView(APIView):
                         }, status=status.HTTP_200_OK)
                     else:
                         return Response({
-                                        'message': f'{scooter_coordinate} {unlock_data}',
+                                        'message': f'{scooter_coordinate} {unlock_data.status_code}',
                                     }, status=status.HTTP_400_BAD_REQUEST)
 
                 if ride_obj.is_ride_end == True:
@@ -646,8 +649,12 @@ class RideStartStopSerializerView(APIView):
                 if action == "pause":
                     if ride_obj.is_paused == False:
                         ride_pause_obj = RideTimeHistory.objects.create(ride_table_id=ride_obj, pause_time=current_time)
-                        lock_data = lock_scooter(scooter.vehicle_unique_identifier)
+                        lock_data = lock_scooter(scooter.vehicle_name)
                         if lock_data.status_code == 200:
+                            if lock_data.json().get("IsError") == True:
+                                return Response({
+                                        'message': str(lock_data.json().get("Message")),
+                                    }, status=status.HTTP_400_BAD_REQUEST)
                             start = datetime.datetime.strptime(str(ride_obj.start_time), "%H:%M:%S")
                             pause = datetime.datetime.strptime(str(current_time), "%H:%M:%S")
                             delta = pause-start
@@ -673,8 +680,12 @@ class RideStartStopSerializerView(APIView):
                 if action == "resume":
                     ride_pause_obj = RideTimeHistory.objects.filter(ride_table_id=ride_obj).last()
                     if ride_obj.is_paused == True:
-                        unlock_data = unlock_scooter(scooter.vehicle_unique_identifier)
+                        unlock_data = unlock_scooter(scooter.vehicle_name)
                         if unlock_data.status_code == 200:
+                            if unlock_data.json().get("IsError") == True:
+                                return Response({
+                                        'message': str(unlock_data.json().get("Message")),
+                                    }, status=status.HTTP_400_BAD_REQUEST)
                             ride_pause_obj.resume_time = str(current_time)
                             ride_obj.is_paused = False
                             pause = datetime.datetime.strptime(str(ride_pause_obj.pause_time), "%H:%M:%S")
@@ -710,8 +721,12 @@ class RideStartStopSerializerView(APIView):
                         # station_obj = Station.objects.filter(lat__gte=lat-val, lat__lte=lat+val, long__gte=long-val, long__lte=long+val).first()
                         # if station_obj is None:
                         #     return Response({'message': 'You cannot end ride here, ride can only be ended at a station'}, status=status.HTTP_400_BAD_REQUEST)
-                        lock_data = lock_scooter(scooter.vehicle_unique_identifier)
+                        lock_data = lock_scooter(scooter.vehicle_name)
                         if lock_data.status_code == 200:
+                            if lock_data.json().get("IsError") == True:
+                                return Response({
+                                        'message': str(lock_data.json().get("Message")),
+                                    }, status=status.HTTP_400_BAD_REQUEST)
                             # scooter.vehicle_station = station_obj
                             scooter.is_unlocked = False
                             scooter.booked_user_id = None
@@ -750,8 +765,8 @@ class RideStartStopSerializerView(APIView):
                             ride_obj.is_ride_running = False
                             ride_obj.is_ride_end = True
                             ride_obj.is_paused = False
-                            scooter_coordinate = get_vehicle_location(scooter.vehicle_unique_identifier, user.id)
-                            ride_obj.end_location = scooter.vehicle_station.address if scooter.vehicle_station else geocode_reverse_coordinate(scooter_coordinate)
+                            scooter_coordinate = get_vehicle_location(scooter.vehicle_unique_identifier)
+                            ride_obj.end_location = scooter.vehicle_station.address if scooter.vehicle_station else "Location" #geocode_reverse_coordinate(scooter_coordinate)
                             ride_obj.save()
 
                             km_list = [1.3, 0.5, 1.21, 0.73, 1.91, 1.68, 2.43, 1.76]
@@ -847,7 +862,7 @@ class RideStartStopSerializerView(APIView):
                         return Response({'message': 'ride already ended'}, status=status.HTTP_401_UNAUTHORIZED)
                 
             except Exception as e:
-                print('e: ', e.__traceback__())
+                print('e: ', e.__traceback__)
                 return Response({'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -1084,14 +1099,31 @@ class GetCurrentRideTime(APIView):
                 ride_id = RideTable.objects.filter(id=ride).last()
                 vehicle_obj = Vehicle.objects.filter(pk = ride_id.vehicle_id.pk).first()
 
+                if ride_id.is_ride_end == True:
+                    return Response({
+                        'message': 'Ride already ended.'
+                    }, status=status.HTTP_400_BAD_REQUEST)
+                
                 if ride_id is None:
                     return Response({
                         'message': 'User Data or Vehicle Data does not match with ride data.'
                     }, status=status.HTTP_400_BAD_REQUEST)
-                    
+                
+                if ride_id.is_paused == True:
+                    running_time = str(datetime.timedelta(seconds=ride_id.total_running_time))
+                    min, sec = divmod(get_sec(str(running_time)), 60)
+                    hour, min = divmod(min, 60)
+                    time = '%d:%02d:%02d' % (hour, min, sec)
+                    data = {
+                        'ride_running_time': time,
+                        'battery_percentage': vehicle_obj.battery_percentage
+                    }
+                    return Response(data=data, status=status.HTTP_200_OK)
+                                    
                 current = datetime.datetime.strptime(str(current_time), "%H:%M:%S")
                 start = datetime.datetime.strptime(str(ride_id.start_time), "%H:%M:%S")
-                delta = current - start
+                pause_time = str(datetime.timedelta(minutes=ride_id.total_pause_time))
+                delta = current - start - pause_time
                 min, sec = divmod(get_sec(str(delta)), 60)
                 hour, min = divmod(min, 60)
                 time = '%d:%02d:%02d' % (hour, min, sec)
@@ -1277,18 +1309,30 @@ class GetAvailableVehicles(ViewSet):
         user_lat = str(request.data.get("user_lat"))
         user_long = str(request.data.get("user_long"))
         update_or_create_vehicle_data()
-        vehicle = restructuring_all_vehicles(pk)
+        station = Station.objects.all()
         try:
-            for key in vehicle:
-                scooter = ast.literal_eval(vehicle[key]) if type(vehicle[key]) == str else [vehicle[key]]
-                # address = geocoder_reverse.delay(scooter[0].get('latitude'), scooter[0].get('longtitude')).get('features')[0].get("properties").get("geocoding").get("label")
-                # print('address: ', address)
-                all_data.append({
-                    "location_stand": "Sector 25, Gandhinagar, Gandhinagar Taluka, Gandhinagar District, Gujarat, 382027, India",
-                    "latitude": scooter[0].get('latitude'),
-                    "longitude": scooter[0].get('longtitude'),
-                    "scooter_data": scooter,
-                })
+        # "scooter_data": [
+        #         {
+        #             "latitude": "23.25248",
+        #             "longtitude": "72.63383",
+        #             "vehicle": "WCM202100002",
+        #             "is_reserved": false,
+        #             "reserved_user": "",
+        #             "per_min_charge": "2.5",
+        #             "battery_percentage": 50,
+        #             "max_km_capacity": "25/Km"
+        #         },
+            for key in station:
+                scooter = list(key.station_object.all().values("lat", "long", "vehicle_unique_identifier", "is_reserved", "reserverd_user_id", "per_min_charge", "battery_percentage", "total_km_capacity"))
+                station_dict = model_to_dict(key)
+                station_dict["scooter_data"] = scooter
+                all_data.append(station_dict)
+                # all_data.append({
+                #     "location_stand": "Sector 25, Gandhinagar, Gandhinagar Taluka, Gandhinagar District, Gujarat, 382027, India",
+                #     "latitude": scooter[0].get('latitude'),
+                #     "longitude": scooter[0].get('longtitude'),
+                #     "scooter_data": scooter,
+                # })
             return Response({'vehicle_data': all_data }, status=status.HTTP_200_OK)
         except Exception as E:
             print('E: ', str(E))

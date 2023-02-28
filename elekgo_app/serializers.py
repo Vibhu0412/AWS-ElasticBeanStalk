@@ -138,8 +138,9 @@ class PaymentModelSerializer(serializers.Serializer):
   payment_note = serializers.CharField(max_length = 100)
   payment_id = serializers.CharField(max_length = 100)
   order_id = serializers.CharField(max_length = 100)
+  payment_date = serializers.CharField(max_length = 100)
   class Meta:
-    fields = ['payment_signature','payment_note','payment_id','order_id']
+    fields = ['payment_signature','payment_note','payment_id','order_id',"payment_date"]
 
     def validate(self, attrs):
       return attrs
@@ -460,6 +461,11 @@ class AppVersionSerializer(serializers.ModelSerializer):
   class Meta:
     model = AppVersion
     fields = "__all__"
+    
+class StationSerializer(serializers.ModelSerializer):
+  class Meta:
+    model = Station
+    fields = ["address", "lat", "long"]
 class OrderSerializer(serializers.Serializer):
   email = serializers.EmailField()
   phone = serializers.CharField(max_length = 12)

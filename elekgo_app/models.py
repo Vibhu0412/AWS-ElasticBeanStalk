@@ -264,6 +264,7 @@ class Station(models.Model):
 
 class Vehicle(models.Model):
     vehicle_unique_identifier = models.CharField(max_length=100, unique=True, verbose_name="Scooter Chassis Number/VIN Number", null=True)
+    vehicle_name = models.CharField(_("Vehicle Name"), max_length=50, default="default")
     vehicle_station = models.ForeignKey(Station, verbose_name=_("Vehicle Station"), on_delete=models.PROTECT, related_name='station_object', null=True, blank=True)
     qr_image = models.ImageField(blank=True, null=True, upload_to='static/QRCode')
     battery_percentage = models.IntegerField(null=True, blank=True)
