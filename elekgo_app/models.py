@@ -312,6 +312,8 @@ class RideTable(models.Model):
     ride_date = models.DateField(auto_now=True)
     start_time = models.TimeField(null=True, blank=True)
     end_time = models.TimeField(null=True, blank=True)
+    last_resume_time = models.TimeField(_("Last Resume Time"), null=True, blank=True)
+    last_pause_time = models.TimeField(_("Last Pause Time"), blank=True, null=True)
     end_date = models.DateField(null=True, blank=True)
     start_date = models.DateField(default=django.utils.timezone.now)
     total_running_time = models.FloatField(default=0, null=True, blank=True)

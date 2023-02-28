@@ -677,6 +677,9 @@ class RideStartStopSerializerView(APIView):
                                     }, status=status.HTTP_400_BAD_REQUEST)
                             start = datetime.datetime.strptime(str(ride_obj.start_time), "%H:%M:%S")
                             pause = datetime.datetime.strptime(str(current_time), "%H:%M:%S")
+                            if ride_obj.last_resume_time != 0:
+                                start = ride_obj.last_resume_time
+                                ride_obj.last_resume_time = start
                             delta = pause-start
                             if ride_obj.total_running_time == None:
                                 ride_obj.total_running_time = get_sec(str(delta))
@@ -708,7 +711,8 @@ class RideStartStopSerializerView(APIView):
                                     }, status=status.HTTP_400_BAD_REQUEST)
                             ride_pause_obj.resume_time = str(current_time)
                             ride_obj.is_paused = False
-                            pause = datetime.datetime.strptime(str(ride_pause_obj.pause_time), "%H:%M:%S")
+                            # pause = datetime.datetime.strptime(str(ride_pause_obj.pause_time), "%H:%M:%S")
+                            pause = ride_obj.last_pause_time
                             resume = datetime.datetime.strptime(str(current_time), "%H:%M:%S")
                             delta = resume-pause
                             ride_pause_obj.pause_duration = get_sec(str(delta))
@@ -716,6 +720,7 @@ class RideStartStopSerializerView(APIView):
                                 ride_obj.total_pause_time = get_sec(str(delta))
                             else:
                                 ride_obj.total_pause_time = get_sec(str(delta)) + int(ride_obj.total_pause_time)
+                            ride_obj.last_resume_time = resume
                             ride_obj.save()
                             ride_pause_obj.save()
                             
