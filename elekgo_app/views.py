@@ -1889,7 +1889,6 @@ class OrderAPI(APIView):
                     "customer_email": email,
                     "customer_phone": phone,
                 },
-                "order_meta": {"payment_methods": "cc"},
                 "order_id": payment.order_id,
                 "order_amount": amount,
                 "order_currency": "INR"
