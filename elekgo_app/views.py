@@ -678,7 +678,7 @@ class RideStartStopSerializerView(APIView):
                             start = datetime.datetime.strptime(str(ride_obj.start_time), "%H:%M:%S")
                             pause = datetime.datetime.strptime(str(current_time), "%H:%M:%S")
                             if ride_obj.last_resume_time is not None:
-                                start = ride_obj.last_resume_time
+                                start = datetime.datetime.strptime(str(ride_obj.last_resume_time), "%H:%M:%S")
                             ride_obj.last_pause_time = pause
                             delta = pause-start
                             if ride_obj.total_running_time == None:
@@ -712,7 +712,7 @@ class RideStartStopSerializerView(APIView):
                             ride_pause_obj.resume_time = str(current_time)
                             ride_obj.is_paused = False
                             resume = datetime.datetime.strptime(str(current_time), "%H:%M:%S")
-                            pause = ride_obj.last_pause_time
+                            pause = datetime.datetime.strptime(str(ride_obj.last_pause_time), "%H:%M:%S")
                             ride_obj.last_resume_time = resume
                             delta = resume-pause
                             ride_pause_obj.pause_duration = get_sec(str(delta))
