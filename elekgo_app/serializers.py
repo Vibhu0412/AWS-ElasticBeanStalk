@@ -135,7 +135,7 @@ class CustomerSatisfactionSerializer(serializers.ModelSerializer):
 
 class PaymentModelSerializer(serializers.Serializer):
   payment_note = serializers.CharField(max_length = 100)
-  order_id = serializers.CharField(max_length = 100)
+  order_id = serializers.CharField(max_length = 100, required=False)
   payment_amount = serializers.FloatField()
   payment_date = serializers.CharField(max_length = 100,default=None)
   class Meta:

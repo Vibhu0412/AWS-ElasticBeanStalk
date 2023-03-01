@@ -536,11 +536,10 @@ class PaymentView(APIView):
                 "account_user_id": pay_user_id,
                 "account_amount": received_amount
             }
-            if PaymentModel.objects.get(order_id=order_id).payment_amount != "":
-                PaymentModel.objects.filter(order_id=order_id).update(payment_amount = received_amount,payment_note = payment_note)
-            else:
+            if payment_note == "VOUCHER" or payment_note == "REFER":
+                response = f"{received_amount} Credited to your Wallet"
+            elif payment_note == 'CREDIT':
                 PaymentModel.objects.filter(order_id=order_id).update(payment_note = payment_note)
-            if payment_note == 'CREDIT':
                 url = f"https://sandbox.cashfree.com/pg/orders/{order_id}"
 
                 headers = {
@@ -554,7 +553,8 @@ class PaymentView(APIView):
                 response = requests.get(url, headers=headers)
                 response = response.json()
             else:
-                response = f"{received_amount} Credited to your Wallet"
+                response = f"payment_note must be one of CREDIT, VOUCHER or REFER"
+                return Response({"data":response,"message": "Your wallet has been updated"}, status=status.HTTP_400_BAD_REQUEST)
             try:
                 pay_user = UserPaymentAccount.objects.get(account_user_id=pay_user_id)
                 amount = pay_user.account_amount
