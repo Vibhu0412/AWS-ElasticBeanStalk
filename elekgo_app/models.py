@@ -359,7 +359,7 @@ class Voucher(models.Model):
     on using voucher user can get a amount of balance in their account
     """
     code = models.CharField(_("Voucher Code"), max_length=8, unique=True, null=True, blank=True)
-    amount = models.FloatField(_("Amount"))
+    amount = models.PositiveIntegerField(_("Amount"))
     is_active = models.BooleanField(default=True)
     is_used = models.BooleanField(_("Is voucher Used"), default=False)
     used_by = models.ForeignKey(User, verbose_name=_("Voucher used by user"), on_delete=models.CASCADE, null=True, blank=True)
