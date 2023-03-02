@@ -220,7 +220,7 @@ class PaymentModel(models.Model):
     payment_user_id = models.ForeignKey(User,on_delete=models.CASCADE)
     payment_id = models.CharField(max_length=100,null=True,blank=True)
     order_id = models.CharField(max_length=100,null=True,blank=True)
-    phone = models.CharField(("Phone Number"), max_length=12)
+    phone = models.CharField(("Phone Number"), max_length=12, null=True, blank=True)
     payment_signature = models.CharField(max_length=200, null=True, blank=True)
     payment_amount = models.DecimalField(max_digits=10, decimal_places=2,null=True,blank=True)
     payment_date = models.DateField(auto_now_add=True)

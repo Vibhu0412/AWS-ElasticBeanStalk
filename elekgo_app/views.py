@@ -525,10 +525,10 @@ class PaymentView(APIView):
     def post(self, request, *args, **kwargs):
         # request.data['payment_amount'] = request.data['payment_amount'].replace(',', '')
         request.data['payment_user_id'] = request.user.id
+        request.data['is_cashfree_payment'] = False
         serializer = PaymentModelSerializer(data=request.data)
         if serializer.is_valid():
-            order_id = serializer.data.get("order_id")
-            # user_id = serializer.validated_data['payment_user_id']
+            order_id = request.data['order_id']
             pay_user_id = request.data['payment_user_id']
             received_amount = request.data['payment_amount']
             payment_note = request.data['payment_note']
@@ -537,6 +537,7 @@ class PaymentView(APIView):
                 "account_amount": received_amount
             }
             if payment_note == "VOUCHER" or payment_note == "REFER":
+                serializer.save()
                 response = f"{received_amount} Credited to your Wallet"
             elif payment_note == 'CREDIT':
                 PaymentModel.objects.filter(order_id=order_id).update(payment_note = payment_note)

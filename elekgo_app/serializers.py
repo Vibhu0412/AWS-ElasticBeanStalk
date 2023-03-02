@@ -134,6 +134,7 @@ class CustomerSatisfactionSerializer(serializers.ModelSerializer):
 
 
 class PaymentModelSerializer(serializers.Serializer):
+  payment_user_id = serializers.CharField(max_length = 100)
   payment_note = serializers.CharField(max_length = 100)
   order_id = serializers.CharField(max_length = 100, required=False)
   payment_amount = serializers.FloatField()
@@ -141,13 +142,17 @@ class PaymentModelSerializer(serializers.Serializer):
   class Meta:
     fields = ['payment_note','order_id',"payment_date","payment_amount"]
 
-    def validate(self, attrs):
-      return attrs
+  def validate(self, attrs):
+    return attrs
 
-    # def create(self, validate_data):
-    #   order_id = validate_data['order_id']
-
-    #   return PaymentModel.objects.get()
+  def create(self, validate_data):
+    order_id = validate_data['order_id']
+    payment_user_id = validate_data["payment_user_id"]
+    payment_amount = validate_data['payment_amount']
+    payment_note = validate_data['payment_note']
+    user_obj = User.objects.filter(id = payment_user_id).first()
+    validate_data.pop("payment_user_id")
+    return PaymentModel.objects.create(payment_user_id=user_obj, **validate_data)
 
 
 class UserPaymentAccountSerializer(serializers.ModelSerializer):
