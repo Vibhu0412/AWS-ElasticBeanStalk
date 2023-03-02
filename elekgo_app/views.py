@@ -160,6 +160,8 @@ class VerifyOTP(APIView):
                         "user_email": user.email,
                         "is_kyc_verified": user.is_user_kyc_verified,
                         "token": token,
+                        "referral_code": user.referral_code, 
+                        "is_referral_code_used":user.is_referral_code_used,
                     }, status=status.HTTP_200_OK)
                 # return Response({
                 #     "status": 400,
@@ -259,7 +261,9 @@ class VerifyOtpLogin(APIView):
                 "user_email": user.email,
                 "message": "logged in successfully",
                 "is_kyc_verified": user.is_user_kyc_verified,
-                "token": get_tokens_for_user(user),
+                "token": get_tokens_for_user(user), 
+                "referral_code": user.referral_code, 
+                "is_referral_code_used":user.is_referral_code_used,
             }, status=status.HTTP_200_OK)
             
         return Response({
