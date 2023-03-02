@@ -106,7 +106,8 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:9000",
     "https://elekgo-authentication.herokuapp.com",
     "https://8000-cs-295616832449-default.cs-asia-southeast1-yelo.cloudshell.dev",
-    "https://elekgo-render-lju5.onrender.com"
+    "https://elekgo-render-lju5.onrender.com",
+    "https://main.do85cbgv6z8ah.amplifyapp.com/login"
 ]
 
 
@@ -119,7 +120,8 @@ CSRF_TRUSTED_ORIGINS = [
     "https://elekgo.herokuapp.com",
     "https://elekgo-authentication.herokuapp.com",
     "https://8000-cs-295616832449-default.cs-asia-southeast1-yelo.cloudshell.dev",
-    "https://elekgo-render-lju5.onrender.com/"
+    "https://elekgo-render-lju5.onrender.com/",
+    "https://main.do85cbgv6z8ah.amplifyapp.com/login",
 ]
 
 
