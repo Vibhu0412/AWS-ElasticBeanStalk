@@ -34,7 +34,7 @@ SECRET_KEY =os.getenv('SECRET_KEY')
 # DEBUG = True
 DEBUG = False
 
-ALLOWED_HOSTS = ['3.108.233.88', "127.0.0.1", "https://main.do85cbgv6z8ah.amplifyapp.com/"]
+ALLOWED_HOSTS = ['3.108.233.88', "127.0.0.1", "main.do85cbgv6z8ah.amplifyapp.com"]
 
 
 # Application definition
