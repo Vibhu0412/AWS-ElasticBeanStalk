@@ -34,7 +34,7 @@ SECRET_KEY =os.getenv('SECRET_KEY')
 # DEBUG = True
 DEBUG = False
 
-ALLOWED_HOSTS = ['3.108.233.88', "127.0.0.1", "https://main.do85cbgv6z8ah.amplifyapp.com/login"]
+ALLOWED_HOSTS = ['3.108.233.88', "127.0.0.1", "https://main.do85cbgv6z8ah.amplifyapp.com"]
 
 
 # Application definition
@@ -107,7 +107,7 @@ CORS_ALLOWED_ORIGINS = [
     "https://elekgo-authentication.herokuapp.com",
     "https://8000-cs-295616832449-default.cs-asia-southeast1-yelo.cloudshell.dev",
     "https://elekgo-render-lju5.onrender.com",
-    "https://main.do85cbgv6z8ah.amplifyapp.com/login"
+    "https://main.do85cbgv6z8ah.amplifyapp.com"
 ]
 
 
@@ -121,7 +121,7 @@ CSRF_TRUSTED_ORIGINS = [
     "https://elekgo-authentication.herokuapp.com",
     "https://8000-cs-295616832449-default.cs-asia-southeast1-yelo.cloudshell.dev",
     "https://elekgo-render-lju5.onrender.com/",
-    "https://main.do85cbgv6z8ah.amplifyapp.com/login",
+    "https://main.do85cbgv6z8ah.amplifyapp.com",
 ]
 
 
